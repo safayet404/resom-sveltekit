@@ -1,6 +1,10 @@
 <script>
     import { user } from "../../stores/auth";
-    import { login } from "$lib/saleor/auth";
+
+    import { goto } from "$app/navigation";
+    import { blur, fly, scale, slide } from "svelte/transition";
+    import Icon from "@iconify/svelte";
+    import toast from "svelte-french-toast";
 
     export let isOpen = false;
     export let close = () => {};
@@ -8,84 +12,95 @@
     let email = "";
     let password = "";
     let error = "";
+    let loading = false;
 
     $: canLogin = email.trim() && password.trim();
-    $: isOpen; // ensure Svelte tracks the prop
 
     async function handleLogin() {
         if (!canLogin) return;
+        loading = true;
 
         try {
-            const result = await login(email, password);
+            const res = await fetch("/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
 
-            if (result?.data?.token) {
-                user.set({ email, token: result.data.token });
-                error = "";
-                email = "";
-                password = "";
+            const result = await res.json();
+
+            if (res.ok && result.success) {
+                user.set({ email });
+                toast.success("Log in Successfully!");
                 close();
+                goto("/");
             } else {
-                error = result?.error?.message || "Invalid credentials";
+                error = result.error || "Invalid credentials";
             }
         } catch (err) {
             error = "Login failed. Please try again.";
-            console.error(err);
         }
+
+        loading = false;
     }
 </script>
 
 {#if isOpen}
     <div
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        transition:scale
+        class="fixed inset-0 backdrop-blur-lg bg-black bg-opacity-50 bg-blur flex justify-center items-center z-50"
     >
-        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md relative">
+        <div class="bg-white p-6 rounded-xl w-full max-w-sm relative">
             <button class="absolute top-2 right-3 text-red-500" on:click={close}
                 >✕</button
             >
-
-            <h2 class="text-xl font-semibold mb-2">
+            <h2 class="text-xl font-semibold mb-1">
                 Are you an existing user?
             </h2>
-
-            <div class="flex justify-between">
-                <p class="text-gray-600 mb-4">Please log in first</p>
+            <div class="flex justify-between items-center mb-4">
+                <p class="text-sm text-gray-600">Please log in first</p>
                 <a
                     href="/registration"
-                    on:click={close}
-                    class="font-semibold my-auto text-sm">Registration</a
+                    class="text-sm text-blue-600"
+                    on:click={close}>Registration</a
                 >
             </div>
 
             <input
-                type="text"
-                placeholder="Email"
-                class="border border-gray-300 w-full p-2 outline-none rounded mb-4"
                 bind:value={email}
+                placeholder="Email"
+                class="w-full p-2 mb-3 border rounded bg-yellow-100"
             />
-
             <input
                 type="password"
-                placeholder="Password"
-                class="border border-gray-300 w-full p-2 outline-none rounded mb-4"
                 bind:value={password}
+                placeholder="Password"
+                class="w-full p-2 mb-3 border rounded bg-yellow-100"
             />
 
             {#if error}
-                <p class="text-red-500 text-sm mb-2">{error}</p>
+                <p class="text-sm text-red-600 mb-2">{error}</p>
             {/if}
 
             <button
                 on:click={handleLogin}
-                class={`w-full ${canLogin ? "bg-black" : "bg-gray-500"} text-white font-semibold p-2 rounded`}
                 disabled={!canLogin}
+                class="w-full bg-black text-white p-2 rounded"
             >
-                Continue
+                {#if loading}
+                    <span class="flex justify-center text-4xl text-white">
+                        <Icon icon="codex:loader" />
+                    </span>
+                {:else}
+                    Continue
+                {/if}
             </button>
 
-            <p class="text-sm text-center mt-4 text-gray-500">
-                By continuing, I agree to their
-                <a href="/" class="underline">privacy</a> and
-                <a href="/" class="underline">policy</a>
+            <p class="text-xs text-center mt-3 text-gray-400">
+                By continuing, I agree to their <a class="underline" href="/"
+                    >privacy</a
+                >
+                and <a class="underline" href="/">policy</a>
             </p>
         </div>
     </div>

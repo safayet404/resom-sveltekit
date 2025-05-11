@@ -1,27 +1,20 @@
-import { product } from '../../data/productData.js';
+import { searchProducts } from "$lib/saleor/products";
 
 export const load = async ({ url }) => {
-    try {
-        const q = url.searchParams.get("q")?.toLowerCase() || "";
+  try {
+    const q = url.searchParams.get("q")?.toLowerCase() || "";
+    const results = await searchProducts(q);
 
-        const normalizedQuery = q.replace(/[-\s]/g, ""); // remove spaces & dashes
-
-        const results = product.filter((item) => {
-            const normalizedName = item.name.toLowerCase().replace(/[-\s]/g, "");
-            return normalizedName.includes(normalizedQuery);
-        });
-
-
-        return {
-            results,
-            q
-        };
-    } catch (err) {
-        console.error("Error in +page.server.js:", err);
-        return {
-            results: [],
-            q: '',
-            error: err.message
-        };
-    }
+    return {
+      results,
+      q
+    };
+  } catch (err) {
+    console.error("Search error:", err);
+    return {
+      results: [],
+      q: '',
+      error: err.message
+    };
+  }
 };

@@ -13,6 +13,8 @@
     let discount = 0;
     let couponError = "";
 
+    console.log("cart", $cart);
+
     $: effectiveTotal = couponApplied ? discountedTotal : totalPrice;
     $: deliveryChargeFinal = effectiveTotal > 1000 ? 0 : 10;
     $: finalTotal = (effectiveTotal + deliveryChargeFinal).toFixed(2);
@@ -38,6 +40,11 @@
     }
 </script>
 
+<svelte:head>
+    <title>Cart</title>
+    <meta name="description" content="This is cart page" />
+</svelte:head>
+
 <section class="container mx-auto p-4">
     <div class=" mt-20 sm:mt-16 flex justify-between">
         <h1 class="text-gray-400 uppercase">Cart Item(s)</h1>
@@ -58,10 +65,10 @@
                                 <Icon icon="material-symbols:delete" />
                             </button>
                         </div>
-                        <div class="flex gap-3">
+                        <div class="flex gap-20">
                             <img
                                 class="w-20 h-20"
-                                src={item?.selectedImage}
+                                src={item?.thumbnail}
                                 alt="product_image"
                             />
                             <div>

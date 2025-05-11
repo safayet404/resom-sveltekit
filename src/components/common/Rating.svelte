@@ -7,7 +7,7 @@
         {#if rate >= index + 1}
             <!-- Full Star -->
             <svg
-                class="w-5 h-5"
+                class="md:w-5 w-3 h-3 sm:w-4 sm:h-4 md:h-5"
                 viewBox="0 0 24 24"
                 fill="#FF7F00"
                 xmlns="http://www.w3.org/2000/svg"
@@ -19,7 +19,7 @@
         {:else if rate > index && rate < index + 1}
             <!-- Half Star -->
             <svg
-                class="w-5 h-5"
+                class="md:w-5 w-3 h-3 sm:w-4 sm:h-4 md:h-5"
                 viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
             >
@@ -37,7 +37,7 @@
         {:else}
             <!-- Empty Star -->
             <svg
-                class="w-5 h-5"
+                class="md:w-5 w-3 h-3 sm:w-4 sm:h-4 md:h-5"
                 viewBox="0 0 24 24"
                 fill="#D3D3D3"
                 xmlns="http://www.w3.org/2000/svg"

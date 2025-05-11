@@ -1,23 +1,33 @@
-import { product } from '../../../data/productData.js';
+import { fetchProductById, fetchRelatedProducts } from "$lib/saleor/products";
 
-
-export async function load({ fetch, params }) {
+export async function load({ params }) {
     const { id } = params;
 
-    const productId = parseInt(id)
+    try {
+        const product = await fetchProductById(id);
 
-    const item = product.find(item => item.id === productId)
+        if (!product || !product.categoryId) {
+            return {
+                status: 404,
+                error: "Product not found or missing category"
+            };
+        }
 
+        const relatedProducts = await fetchRelatedProducts(
+            product.categoryId,
+            30,
+            product.id // exclude current product
+        );
 
-    if (!item) {
         return {
-            status: 404,
-            error: new Error('Product not found'),
+            product,
+            relatedProducts
+        };
+    } catch (e) {
+        return {
+            product: null,
+            relatedProducts: [],
+            error: e.message || "Error loading product"
         };
     }
-
-
-
-
-    return { product: item };
 }

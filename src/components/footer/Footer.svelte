@@ -5,12 +5,12 @@
         >
             <div class="mb-10">
                 <h1
-                    class="text-lg uppercase md:text-3xl font-bold text-black mt-10"
+                    class="text-sm sm:text-lg uppercase md:text-3xl font-bold text-black mt-10"
                 >
                     Newsletter
                 </h1>
 
-                <p class="text-sm mt-2 text-[#878787]">
+                <p class="text-xs md:text-sm mt-2 text-[#878787]">
                     We have clothes that suits your style and which you’re proud
                     to wear. From women to men.
                 </p>
@@ -18,10 +18,10 @@
                 <div class="flex flex-wrap mt-3 gap-2">
                     <input
                         placeholder="Send E-mail"
-                        class=" px-5 py-2 w-full rounded-lg bg-[#E6E6E6] border border-[#5C5C5C]"
+                        class="px-3 text-xs md:text-base md:px-5 md:py-2 w-full rounded-sm md:rounded-lg bg-[#E6E6E6] border border-[#5C5C5C]"
                     />
                     <button
-                        class="px-5 text rounded-lg font-medium text-black bg-[#D9D9D9]"
+                        class="px-3 md:px-5 text-xs sm:text-sm lg:text-base rounded-sm md:rounded-lg font-medium text-black bg-[#D9D9D9]"
                         >Send</button
                     >
                 </div>
@@ -29,12 +29,14 @@
 
             <div class="mb-10 mx-auto">
                 <h1
-                    class="text-lg uppercase md:text-xl font-bold text-black mt-10"
+                    class="text-sm sm:text-lg uppercase md:text-3xl font-bold text-black mt-10"
                 >
                     Company
                 </h1>
 
-                <ul class="text-[#5C5C5C] mt-5 space-y-3">
+                <ul
+                    class="text-[#5C5C5C] mt-5 text-xs sm:text-sm md:text-base space-y-3"
+                >
                     <li>About</li>
                     <li>Features</li>
                     <li>Works</li>
@@ -43,12 +45,14 @@
             </div>
             <div class="mb-10 lg:mx-auto">
                 <h1
-                    class="text-lg uppercase md:text-xl font-bold text-black mt-10"
+                    class="text-sm sm:text-lg uppercase md:text-3xl font-bold text-black sm:mt-10"
                 >
                     Company
                 </h1>
 
-                <ul class="text-[#5C5C5C] mt-5 space-y-3">
+                <ul
+                    class="text-[#5C5C5C] mt-5 text-xs sm:text-sm md:text-base space-y-3"
+                >
                     <li>Customer Support</li>
                     <li>Delivery Details</li>
                     <li>Terms & Conditions</li>
@@ -63,7 +67,7 @@
             class="grid grid-cols-1 text-center gap-2 md:grid-cols-3 mx-auto mt-5"
         >
             <div class="md:mb-5">
-                <h1>All Right Reserved</h1>
+                <h1 class="text-sm md:text-base">All Right Reserved</h1>
             </div>
             <div>
                 <ul class="mx-auto flex items-center justify-center gap-5">

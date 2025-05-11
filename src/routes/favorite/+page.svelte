@@ -7,6 +7,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>Wishlist</title>
+    <meta name="description" content="Product Wishlist Page" />
+</svelte:head>
 <section class="container mx-auto p-4">
     <div class="grid grid-cols-1 mt-20">
         {#each $favorite as item}

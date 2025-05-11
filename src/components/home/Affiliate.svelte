@@ -1,5 +1,5 @@
 <section class="container mx-auto p-4">
-    <div class="flex justify-between gap-10">
+    <div class="flex flex-wrap sm:flex-nowrap justify-between gap-10">
         <div class="mt-5">
             <h1 class="font-bold capitalize text-lg sm:text-xl md:text-4xl">
                 Join our affiliate team

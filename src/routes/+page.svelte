@@ -8,6 +8,13 @@
 	import ByStyle from "../components/home/ByStyle.svelte";
 	import Affiliate from "../components/home/Affiliate.svelte";
 	import { product } from "../data/productData";
+
+	export let data;
+	const { newArrivals, topSelling } = data;
+
+	const isProd = process.env.NODE_ENV;
+
+	console.log("production console", isProd);
 </script>
 
 <svelte:head>
@@ -18,8 +25,20 @@
 <section>
 	<Hero />
 	<Category />
-	<CommonProduct title="New Arrival" {product} />
-	<CommonProduct title="Top Selling" {product} />
+
+	<CommonProduct
+		title="New Arrival"
+		initialProducts={newArrivals}
+		initialLimit={4}
+		expandBy={10}
+	/>
+	<CommonProduct
+		title="Top Selling"
+		initialProducts={topSelling}
+		initialLimit={4}
+		expandBy={10}
+	/>
+
 	<ByStyle />
 	<Affiliate />
 </section>

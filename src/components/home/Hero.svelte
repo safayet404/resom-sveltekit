@@ -14,17 +14,19 @@
     <dvi>
         <Splide {options}>
             <SplideSlide>
-                <img
+                <enhanced:img
                     class="w-full mt-10 h-[20vh] sm:h-[30vh] md:h-[40vh] lg:h-[50vh]"
                     alt="banner"
-                    src="/banner4.png"
+                    src="$lib/images/banner4.png"
+                    loading="lazy"
                 />
             </SplideSlide>
             <SplideSlide>
-                <img
+                <enhanced:img
                     class="w-full mt-10 h-[20vh] sm:h-[30vh] md:h-[40vh] lg:h-[50vh]"
                     alt="banner"
-                    src="/banner4.png"
+                    src="$lib/images/banner4.png"
+                    loading="lazy"
                 />
             </SplideSlide>
         </Splide>

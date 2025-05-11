@@ -1,5 +1,4 @@
 <script>
-    import { Splide, SplideSlide } from "@splidejs/svelte-splide";
     import { fly, slide } from "svelte/transition";
     import LoginModal from "../auth/LoginModal.svelte";
     import { cart } from "../../stores/cart";
@@ -8,14 +7,32 @@
 
     import { clickOutside } from "$lib/actions/clickOutside.js";
     import { browser } from "$app/environment";
-    import { onMount } from "svelte";
-    import TopHeader from "./TopHeader.svelte";
-    import ToggleButton from "./ToggleButton.svelte";
-    import { user } from "../../stores/auth";
+    import { onMount, tick } from "svelte";
+    import { user, logout } from "../../stores/auth";
+    import { goto } from "$app/navigation";
+    import toast from "svelte-french-toast";
+    import { hydrated } from "../../stores/hydration";
 
-    let isMenuOpen = false;
     let isLoginOpen = false;
     let isDropdownOpen = false;
+
+    function closeDropdown() {
+        isDropdownOpen = false;
+    }
+
+    let searchQuery = "";
+
+    async function handleSearch(e) {
+        e.preventDefault();
+
+        if (searchQuery.trim()) {
+            await goto(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        }
+    }
+
+    $: cartLength = $cart.length;
+
+    $: favoriteLength = $favorite.length;
 
     function handleProfileClick() {
         if ($user) {
@@ -25,56 +42,12 @@
         }
     }
 
-    function closeDropdown() {
+    async function handleLogout() {
+        await logout();
         isDropdownOpen = false;
-    }
-
-    const toggleMenu = () => {
-        isMenuOpen = !isMenuOpen;
-    };
-
-    let isServiceOpen = false;
-    const toggleService = () => {
-        isServiceOpen = !isServiceOpen;
-    };
-    let isAboutOpen = false;
-    const toggleAbout = () => {
-        isAboutOpen = !isAboutOpen;
-    };
-
-    const options = {
-        type: "loop",
-        autoplay: true,
-        interval: 2000,
-
-        arrows: false,
-        perPage: 1,
-    };
-
-    let searchQuery = "";
-
-    function handleSearch(e) {
-        e.preventDefault();
-
-        if (searchQuery.trim()) {
-            window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
-        }
-    }
-
-    $: cartLength = $cart.length;
-
-    $: favoriteLength = $favorite.length;
-
-    let mounted = false;
-    onMount(() => {
-        mounted = true;
-    });
-
-    function logout() {
-        user.set(null); // Clear store
-        localStorage.removeItem("user"); // Remove persisted data
-        isDropdownOpen = false; // Close dropdown
-        window.location.href = "/"; // Optional: redirect to homepage
+        await tick();
+        goto("/");
+        toast.success("Logout Successfully !");
     }
 </script>
 
@@ -82,90 +55,102 @@
     <div class="grid grid-cols-2 gap-3 justify-between">
         <form
             on:submit={handleSearch}
-            class="border rounded-2xl flex items-center"
+            class="flex items-center border rounded-2xl px-2 h-10 mt-1"
         >
-            <span class="material-icons my-auto p-1"> search </span>
+            <span class="material-icons text-base text-gray-500">search</span>
             <input
-                placeholder="Search Items "
-                class="my-auto outline-none"
                 bind:value={searchQuery}
+                placeholder="Search Items"
+                class="ml-2 text-sm outline-none bg-transparent flex-grow"
             />
         </form>
+
         <div>
             <ul class="flex mt-2 items-center gap-3">
                 <li class="relative">
-                    <a href="/favorite">
-                        <span class="material-icons bg-white">
-                            favorite
-                        </span></a
+                    <a
+                        href="/favorite"
+                        class="cursor-pointer text-lg sm:text-2xl md:text-3xl"
                     >
-
-                    {#if mounted && cartLength > 0}
+                        <span class="material-icons">favorite</span>
+                    </a>
+                    {#if $favorite.length > 0}
                         <span
                             class="absolute -top-4 -right-2 text-white rounded-2xl p-1 bg-red-800"
                         >
-                            {favoriteLength}
+                            {$favorite.length}
                         </span>
                     {/if}
                 </li>
                 <li class="relative">
-                    <a href="/cart">
-                        <span class="material-icons cursor-pointer">
-                            shopping_bag
-                        </span></a
+                    <a
+                        href="/cart"
+                        class="cursor-pointer text-lg sm:text-2xl md:text-3xl"
                     >
-
-                    {#if mounted && cartLength > 0}
+                        <span class="material-icons">shopping_cart</span>
+                        <!-- <Icon icon="solar:cart-bold" /> -->
+                    </a>
+                    {#if $cart.length > 0}
                         <span
                             class="absolute -top-4 -right-2 text-white rounded-2xl p-1 bg-red-800"
                         >
-                            {cartLength}
+                            {$cart.length}
                         </span>
                     {/if}
                 </li>
-                {#if mounted}
-                    <li class="relative" use:clickOutside={closeDropdown}>
-                        <button class="text-2xl" on:click={handleProfileClick}>
-                            <Icon
-                                icon={$user ? "mdi:user" : "mdi:user-outline"}
-                            />
-                        </button>
-
-                        {#if isDropdownOpen && $user}
-                            <ul
-                                transition:slide
-                                class="absolute top-full right-0 mt-2 w-48 bg-white shadow-lg rounded-md z-50 p-5 space-y-4"
-                            >
-                                <li>
-                                    <a href="/profile">👤 Profile</a>
-                                </li>
-                                <li>
-                                    <a href="/orders">📦 My Orders</a>
-                                </li>
-                                <li>
-                                    <a href="/security">🔐 Security</a>
-                                </li>
-                                <li>
-                                    <a href="/payment">💳 Payment</a>
-                                </li>
-                                <li>
-                                    <a href="/affiliate">🎯 Affiliate</a>
-                                </li>
-                                <li>
-                                    <a href="/help">❓ Need Help</a>
-                                </li>
-                                <li class="text-gray-400">
-                                    <button
-                                        on:click={logout}
-                                        class="w-full text-left text-red-600 hover:underline"
-                                    >
-                                        🔓 Log Out
-                                    </button>
-                                </li>
-                            </ul>
+                <li class="relative" use:clickOutside={closeDropdown}>
+                    <span
+                        on:keydown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault(); // prevent scrolling on space
+                                handleProfileClick();
+                            }
+                        }}
+                        role="button"
+                        tabindex="0"
+                        aria-label="profile"
+                        class="cursor-pointer text-lg sm:text-2xl md:text-3xl mt-1"
+                        on:click={handleProfileClick}
+                    >
+                        {#if $user}
+                            <span class="material-icons">how_to_reg</span>
+                        {:else}
+                            <span class="material-icons">person</span>
                         {/if}
-                    </li>
-                {/if}
+                    </span>
+
+                    {#if isDropdownOpen && $user}
+                        <ul
+                            transition:slide
+                            class="absolute top-full right-0 mt-2 w-48 bg-white shadow-lg rounded-md z-50 p-5 space-y-4"
+                        >
+                            <li>
+                                <a href="/account/profile">👤 Profile</a>
+                            </li>
+                            <li>
+                                <a href="/account/orders">📦 My Orders</a>
+                            </li>
+                            <li>
+                                <a href="/account/security">🔐 Security</a>
+                            </li>
+                            <li>
+                                <a href="/account/payment">💳 Payment</a>
+                            </li>
+                            <li>
+                                <a href="/account/affiliate">🎯 Affiliate</a>
+                            </li>
+                            <li>
+                                <a href="/account/help">❓ Need Help</a>
+                            </li>
+                            <li>
+                                <button
+                                    class="text-red-600"
+                                    on:click={handleLogout}>🔓 Logout</button
+                                >
+                            </li>
+                        </ul>
+                    {/if}
+                </li>
             </ul>
         </div>
     </div>

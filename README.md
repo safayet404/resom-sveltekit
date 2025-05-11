@@ -36,3 +36,8 @@ npm run build
 You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+
+
+PUBLIC_API_URL="https://api-beta.resom.com.br/graphql/"
+PUBLIC_CHANNEL="channel-pln"
+PUBLIC_REDIRECT_URL="http://localhost:5173/" ---> project real domain

@@ -1,47 +1,75 @@
 <script>
     import { onMount } from "svelte";
+    import { goto } from "$app/navigation";
+    import { saleorApiUrl } from "$lib/saleor/auth";
 
-    let status = "Confirming your email...";
+    let status = "🔄 Confirming your email...";
 
     onMount(async () => {
         const url = new URL(window.location.href);
-        const token = url.searchParams.get("emailToken");
+        const token = url.searchParams.get("token");
+        const email = url.searchParams.get("email");
 
-        if (!token) {
-            status = "Invalid confirmation link.";
+        if (!token || !email) {
+            status = "❌ Invalid confirmation link.";
             return;
         }
 
-        const res = await fetch("https://api-beta.resom.com.br/graphql/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                query: `
-          mutation ConfirmAccount($token: String!) {
-            confirmAccount(token: $token) {
-              errors {
-                field
-                message
-              }
+        try {
+            const res = await fetch(saleorApiUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    query: `
+                        mutation ConfirmAccount($email: String!, $token: String!) {
+                            confirmAccount(email: $email, token: $token) {
+                                errors {
+                                    field
+                                    message
+                                }
+                            }
+                        }
+                    `,
+                    variables: { email, token },
+                }),
+            });
+
+            const json = await res.json();
+            console.log("ConfirmAccount response:", json);
+
+            const errors = json?.data?.confirmAccount?.errors;
+
+            if (errors && errors.length > 0) {
+                status = "❌ Confirmation failed: " + errors[0].message;
+            } else {
+                status = "✅ Your email has been successfully confirmed!";
+                // setTimeout(() => {
+                //     history.replaceState({}, document.title, "/confirm-email");
+                //     // Optionally redirect to login:
+                //     // goto("/login");
+                // }, 1500);
+
+                setTimeout(() => {
+                    goto("/login");
+                }, 1500);
             }
-          }
-        `,
-                variables: { token },
-            }),
-        });
-
-        const json = await res.json();
-        const errors = json?.data?.confirmAccount?.errors;
-
-        if (errors && errors.length > 0) {
-            status = "Confirmation failed: " + errors[0].message;
-        } else {
-            status = "✅ Your email has been successfully confirmed!";
+        } catch (err) {
+            console.error("Confirmation error:", err);
+            status = "❌ An unexpected error occurred.";
         }
     });
 </script>
 
-<h1 class="text-xl font-bold mb-4">Email Confirmation</h1>
-<p>{status}</p>
+<svelte:head>
+    <title>Email Confirmation</title>
+    <meta name="description" content="Email Confirmation" />
+</svelte:head>
+
+<section class="container mx-auto p-4 text-center mt-20">
+    <div class="mt-10">
+        <h1 class="text-2xl font-bold mb-4">Email Confirmation</h1>
+        <p class="text-lg">{status}</p>
+    </div>
+</section>

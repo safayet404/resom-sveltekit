@@ -1,35 +1,57 @@
-import { createSaleorAuthClient } from "@saleor/auth-sdk";
 
-export const saleorApiUrl = "https://api-beta.resom.com.br/graphql/";
-export const defaultChannel = "channel-pln"; // adjust if needed
+import { PUBLIC_API_URL, PUBLIC_CHANNEL, PUBLIC_REDIRECT_URL } from "$env/static/public";
 
-const authClient = createSaleorAuthClient({
-    saleorApiUrl,
-    storage: typeof window !== "undefined" ? window.localStorage : undefined,
-});
+export const saleorApiUrl = PUBLIC_API_URL;
+export const defaultChannel = PUBLIC_CHANNEL;
 
-export const saleorAuthClient = authClient;
 
-export function getAuthToken() {
-    return authClient?.authState?.token || null;
+export async function refreshToken(refreshToken) {
+  console.log("Attempting refresh with token:", refreshToken);
+
+  const res = await fetch(saleorApiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: `
+        mutation RefreshToken($refreshToken: String!) {
+          tokenRefresh(refreshToken: $refreshToken) {
+            token
+            errors {
+              message
+            }
+          }
+        }
+      `,
+      variables: { refreshToken }
+    })
+  });
+
+  const json = await res.json();
+  console.log("Raw refresh response:", json);
+
+  const data = json?.data?.tokenRefresh;
+
+  if (!data?.token || data.errors?.length) {
+    console.log("Refresh failed:", data?.errors);
+    return null;
+  }
+
+  return {
+    token: data.token,
+
+  };
 }
 
-export async function login(email, password) {
-    return await authClient.signIn({ email, password });
-}
 
-export async function logout() {
-    return await authClient.signOut();
-}
 
 export async function register(email, password) {
-    const response = await fetch(saleorApiUrl, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            query: `
+  const response = await fetch(saleorApiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query: `
         mutation Register($email: String!, $password: String!, $redirectUrl: String!, $channel: String!) {
           accountRegister(input: {
             email: $email,
@@ -49,18 +71,61 @@ export async function register(email, password) {
           }
         }
       `,
-            variables: {
-                email,
-                password,
-                redirectUrl: "https://localhost:5173/confirm-email", // 👈 update for prod
-                channel: defaultChannel,
-            },
-        }),
-    });
+      variables: {
+        email,
+        password,
+        redirectUrl: `${PUBLIC_REDIRECT_URL}confirm-email`,
+        channel: defaultChannel,
+      },
+    }),
+  });
 
-    const json = await response.json();
-    return {
-        data: json?.data?.accountRegister,
-        error: json?.errors?.[0] || json?.data?.accountRegister?.errors?.[0],
-    };
+  const json = await response.json();
+  return {
+    data: json?.data?.accountRegister,
+    error: json?.errors?.[0] || json?.data?.accountRegister?.errors?.[0],
+  };
+}
+
+
+export async function resetPassword({ email, password, confirmPassword, token }) {
+  if (password !== confirmPassword) {
+    return { error: "Passwords do not match." };
+  }
+
+  const res = await fetch(saleorApiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: `
+        mutation SetPassword($email: String!, $password: String!, $token: String!) {
+          setPassword(email: $email, password: $password, token: $token) {
+            token
+            refreshToken
+            errors {
+              field
+              message
+            }
+          }
+        }
+      `,
+      variables: { email, password, token },
+    }),
+  });
+
+  const json = await res.json();
+  const errors = json?.data?.setPassword?.errors;
+
+  if (errors?.length) {
+    return { error: errors[0].message };
+  }
+
+  return {
+    success: true,
+    message: "✅ Password reset successfully!",
+    tokens: {
+      token: json.data.setPassword.token,
+      refreshToken: json.data.setPassword.refreshToken
+    }
+  };
 }
