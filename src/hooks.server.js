@@ -5,7 +5,7 @@ import { isTokenExpired } from '$lib/utils/jwt';
 export async function handle({ event, resolve }) {
     const isProd = process.env.NODE_ENV === 'production';
 
-    const cookieDomain = isProd ? 'beta.resom.com.br' : undefined;
+    const cookieDomain = isProd ? '.resom.com.br' : undefined;
 
     // 1. Get cookies
     const token = event.cookies.get('authToken');
