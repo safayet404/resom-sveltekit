@@ -1,0 +1,1 @@
+import{w as a}from"./14ueUjGG.js";const r=localStorage.getItem("cart")?JSON.parse(localStorage.getItem("cart")):[],e=a(r);e.subscribe(t=>{localStorage.setItem("cart",JSON.stringify(t))});export{e as c};

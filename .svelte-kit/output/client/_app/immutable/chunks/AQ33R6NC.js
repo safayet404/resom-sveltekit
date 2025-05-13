@@ -1,0 +1,1 @@
+import{w as e}from"./14ueUjGG.js";const a=localStorage.getItem("favorite")?JSON.parse(localStorage.getItem("favorite")):[],o=e(a);o.subscribe(t=>{localStorage.setItem("favorite",JSON.stringify(t))});export{o as f};

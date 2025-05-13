@@ -1,0 +1,10 @@
+import{t as h,a as g}from"../chunks/DNFbThfs.js";import"../chunks/BUQwjzWP.js";import{j as y,t as b,k,$ as A,f as a,m as $,e as i,s as w,r as m,g as _}from"../chunks/DoNDGHyy.js";import{s as S}from"../chunks/DC9tgs7-.js";import{h as E}from"../chunks/C2qLbvVc.js";import{i as P}from"../chunks/CVtg5WK5.js";import{o as T}from"../chunks/Dja85v4K.js";import{g as j}from"../chunks/1o6BxO2k.js";import{s as O}from"../chunks/aYqcQ64t.js";var U=h('<meta name="description" content="Email Confirmation">'),q=h('<section class="container mx-auto p-4 text-center mt-20"><div class="mt-10"><h1 class="text-2xl font-bold mb-4">Email Confirmation</h1> <p class="text-lg"> </p></div></section>');function D(v,x){y(x,!1);let t=$("🔄 Confirming your email...");T(async()=>{var p,u;const o=new URL(window.location.href),e=o.searchParams.get("token"),f=o.searchParams.get("email");if(!e||!f){a(t,"❌ Invalid confirmation link.");return}try{const r=await(await fetch(O,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:`
+                        mutation ConfirmAccount($email: String!, $token: String!) {
+                            confirmAccount(email: $email, token: $token) {
+                                errors {
+                                    field
+                                    message
+                                }
+                            }
+                        }
+                    `,variables:{email:f,token:e}})})).json();console.log("ConfirmAccount response:",r);const s=(u=(p=r==null?void 0:r.data)==null?void 0:p.confirmAccount)==null?void 0:u.errors;s&&s.length>0?a(t,"❌ Confirmation failed: "+s[0].message):(a(t,"✅ Your email has been successfully confirmed!"),setTimeout(()=>{j("/login")},1500))}catch(d){console.error("Confirmation error:",d),a(t,"❌ An unexpected error occurred.")}}),P();var n=q();E(o=>{var e=U();A.title="Email Confirmation",g(o,e)});var c=i(n),l=w(i(c),2),C=i(l,!0);m(l),m(c),m(n),b(()=>S(C,_(t))),g(v,n),k()}export{D as component};
