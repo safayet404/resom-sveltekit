@@ -8,13 +8,12 @@
 	import ByStyle from "../components/home/ByStyle.svelte";
 	import Affiliate from "../components/home/Affiliate.svelte";
 	import { product } from "../data/productData";
+	import { user } from "../stores/auth";
+	import { onMount } from "svelte";
 
 	export let data;
 	const { newArrivals, topSelling } = data;
-
-	const isProd = process.env.NODE_ENV;
-
-	console.log("production console", isProd);
+	user.set(data.user);
 </script>
 
 <svelte:head>

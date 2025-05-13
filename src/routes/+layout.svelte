@@ -1,47 +1,47 @@
-<!-- src/routes/account/+layout.svelte -->
 <script>
-	import { page } from "$app/stores";
+	import toast, { Toaster } from "svelte-french-toast";
+	import Header from "./Header.svelte";
+	import Navbar from "../components/navbar/Navbar.svelte";
+	import Footer from "../components/footer/Footer.svelte";
+	import Loader from "../components/common/Loader.svelte";
 
-	const menuItems = [
-		{ label: "Profile", icon: "👤", path: "profile" },
-		{ label: "My Orders", icon: "📦", path: "orders" },
-		{ label: "Security", icon: "🔐", path: "security" },
-		{ label: "Payment", icon: "💳", path: "payment" },
-		{ label: "Affiliate", icon: "🎯", path: "affiliate" },
-		{ label: "Need Help", icon: "❓", path: "help" },
-	];
+	import "@splidejs/splide/dist/css/splide.min.css";
+	import "../app.css";
 
-	$: currentPath = $page.url.pathname;
+	import Icon from "@iconify/svelte";
+	import { user } from "../stores/auth";
+	import { hydrated } from "../stores/hydration";
+	import { isLoading } from "../stores/loading";
+	import { onMount } from "svelte";
+
+	export let data;
+
+	user.set(data.user);
+
+	onMount(async () => {
+		if (!data?.user) {
+			try {
+				const res = await fetch("/api/me");
+				if (res.ok) {
+					const userData = await res.json();
+					user.set(userData);
+				}
+			} catch (err) {
+				console.error("Failed to restore user from client:", err);
+			}
+		}
+	});
 </script>
 
-<section class="container mx-auto p-4">
-	<div class="flex mt-20 bg-[#EFEFEF] rounded-lg min-h-screen">
-		<!-- Sidebar -->
-		<aside class="w-64 border-r p-4 space-y-4">
-			{#each menuItems as item}
-				<a
-					class="block p-2 rounded hover:bg-gray-100 font-medium"
-					class:selected={currentPath.endsWith(item.path)}
-					href={`/account/${item.path}`}
-				>
-					{item.icon}
-					{item.label}
-				</a>
-			{/each}
-			<hr />
-			<a class="text-red-600 font-medium p-2" href="/logout">🔓 Log Out</a
-			>
-		</aside>
+<Toaster />
 
-		<!-- Content -->
-		<main class="flex-1 p-6">
-			<slot />
-		</main>
-	</div>
-</section>
+<div class="app">
+	<Navbar {data} />
 
-<style>
-	a.selected {
-		background-color: #f3f4f6;
-	}
-</style>
+	<main class="mt-[30%] sm:mt-[15%] md:mt-[10%] lg:mt-[5%]">
+		<slot />
+		<!-- ✅ renders ssthe child page -->
+	</main>
+
+	<Footer />
+</div>

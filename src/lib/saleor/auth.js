@@ -27,12 +27,12 @@ export async function refreshToken(refreshToken) {
   });
 
   const json = await res.json();
-  console.log("Raw refresh response:", json);
+  //console.log("Raw refresh response:", json);
 
   const data = json?.data?.tokenRefresh;
 
   if (!data?.token || data.errors?.length) {
-    console.log("Refresh failed:", data?.errors);
+    //console.log("Refresh failed:", data?.errors);
     return null;
   }
 
