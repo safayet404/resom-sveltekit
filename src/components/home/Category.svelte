@@ -1,52 +1,72 @@
-<section class="mx-auto px-4 container mt-10">
-    <div class="grid grid-cols-3 md:grid-cols-3 gap-5 items-start">
-        <div class="relative hover:scale-105 transition-transform duration-300">
-            <a href="/category/sweatshirts">
-                <img
-                    class="w-full object-cover"
-                    alt="category"
-                    src="/cat1.png"
-                />
+<script>
+  import { fixImageUrl } from "$lib/utils/fixImageUrl";
 
-                <div class="absolute inset-0 bg-black opacity-45"></div>
-                <h1
-                    class="absolute text-white font-bold text-base md:text-3xl left-3 md:left-10 bottom-2 md:bottom-5"
-                >
-                    Sweatshirts
-                </h1>
-            </a>
-        </div>
-        <div class="relative hover:scale-105 transition-transform duration-300">
-            <a href="/category/t-shirts">
-                <img
-                    class="w-full object-cover"
-                    alt="category"
-                    src="/cat2.png"
-                />
+  import { register, addMessages, init, locale as i18nLocale } from "svelte-i18n";
+  import { browser } from "$app/environment";
+  import { fetchCollectionTreeTranslation } from "$lib/saleor/categories";
 
-                <div class="absolute inset-0 bg-black opacity-45"></div>
-                <h1
-                    class="absolute text-white font-bold text-base md:text-3xl left-3 md:left-10 bottom-2 md:bottom-5"
-                >
-                    T Shirt
-                </h1>
-            </a>
-        </div>
-        <div class="relative hover:scale-105 transition-transform duration-300">
-            <a href="/category/polo-shirts-2">
-                <img
-                    class="w-full object-cover"
-                    alt="category"
-                    src="/cat3.png"
-                />
+  export let collection;
+  export let lang;
 
-                <div class="absolute inset-0 bg-black opacity-45"></div>
-                <h1
-                    class="absolute text-white font-bold text-base md:text-3xl left-3 md:left-10 bottom-2 md:bottom-5"
-                >
-                    Polo Shirt
-                </h1>
-            </a>
+  let translateCollection = collection;
+
+  $: if (browser && i18nLocale && i18nLocale !== lang) {
+    const languageCode = $i18nLocale.toUpperCase();
+
+    fetchCollectionTreeTranslation(languageCode)
+      .then((newCollection) => {
+        translateCollection = newCollection;
+      })
+      .catch((err) => {
+        toast.error("Failed to load translated categories.");
+      });
+  }
+</script>
+
+<section class=" mx-auto">
+  <div class="grid md:grid-cols-4 grid-cols-2 justify-center gap-5 mt-10 px-5 lg:px-10">
+    {#each translateCollection as item}
+      <a class="single-cat" href={`/collection/${item?.slug}`}>
+        <div class="image-holder p-4">
+          <img
+            class="w-full h-full object-contain"
+            alt="category"
+            src={fixImageUrl(item?.backgroundImage?.url)}
+          />
         </div>
-    </div>
+
+        <div class="default-black-bg opacity-45"></div>
+        <h1 class="text-xs md:text-sm lg:text-xl cat-title capitalize bg-[#00000029]">
+          {item?.name}
+        </h1>
+      </a>
+    {/each}
+  </div>
 </section>
+
+<style>
+  .single-cat {
+    background: linear-gradient(to bottom, #eee9e5, #f5f5f5);
+  }
+  .single-cat:hover .cat-title {
+    background-color: black;
+    color: white;
+    transition: all 0.4s ease-in-out;
+  }
+  .image-holder {
+    overflow: hidden;
+  }
+  .image-holder img {
+    transition: transform 0.4s ease-in-out;
+  }
+  .image-holder:hover img {
+    transform: scale(1.1);
+  }
+  .cat-title {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-weight: 500;
+
+    text-align: center;
+  }
+</style>

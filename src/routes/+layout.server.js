@@ -1,22 +1,43 @@
-// +layout.server.js
-import { fetchCategoryTree } from "$lib/saleor/categories";
-
 export const prerender = false;
 
-export async function load({ setHeaders, locals }) {
-    const categories = await fetchCategoryTree();
+import {
+  fetchCategoryTree,
+  fetchCategoryTreeTranslation,
+  fetchCollectionTreeTranslation,
+} from "$lib/saleor/categories";
 
-    setHeaders({
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'CDN-Cache-Control': 'no-cache', // For some CDNs
-        'Vary': '*' // Important for CDNs
+/**
+ * Detects the preferred locale from Accept-Language header.
+ * Fallbacks to 'en' if no match is found.
+ */
+function detectLocaleFromHeader(request) {
+  const accept = request.headers.get("accept-language") || "";
+  const langs = accept.split(",").map((l) => l.split(";")[0].trim());
+  const supported = ["en", "es", "pt", "de"];
+  const matched = langs.find((l) => supported.includes(l.split("-")[0]));
+  return matched ? matched.split("-")[0] : "en";
+}
+
+export async function load({ cookies, setHeaders, locals, request }) {
+  let locale = cookies.get("locale");
+
+  const translateCategories = await fetchCategoryTreeTranslation(locale);
+
+  if (!locale) {
+    locale = detectLocaleFromHeader(request);
+
+    cookies.set("locale", locale, {
+      path: "/",
+      httpOnly: false,
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 365,
     });
+  }
 
-    return {
-        categories,
-        user: locals.user || null,
-        version: Date.now()
-    };
+  return {
+    translateCategories,
+    user: locals.user || null,
+    version: Date.now(),
+    locale,
+  };
 }

@@ -126,16 +126,18 @@
                         <p
                             class="font-semibold text-sm sm:text-base md:text-xl mt-2"
                         >
-                            ${(
+                            <!-- ${(
                                 item.price -
                                 (item.price * item.discount) / 100
-                            ).toFixed(2)}
+                            ).toFixed(2)} -->
+
+                            ${item?.price}
                         </p>
                     {:else}
                         <p
                             class="font-semibold mt-2 text-xs sm:text-base md:text-xl text-black"
                         >
-                            ${item?.price}
+                            ${item?.originalPrice}
                         </p>
                     {/if}
 
@@ -144,7 +146,7 @@
                             <p
                                 class="font-semibold mt-2 text-xs sm:text-base md:text-xl text-gray-400 line-through"
                             >
-                                ${item?.price}
+                                ${item?.originalPrice}
                             </p>
                             <p
                                 class="bg-[#FFEBEB] text-[#FF3333] mt-3 md:mt-2 text-[8px] md:text-xs lg:text-sm md:px-3 md:py-1 px-1 py-1 my-auto rounded-full"

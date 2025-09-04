@@ -1,31 +1,59 @@
 import { fixImageUrl } from "$lib/utils/fixImageUrl.js";
 import { parseEditorJs } from "../../utils/parseEditorsJs.js";
 import { saleorApiUrl, defaultChannel } from "./auth.js";
+import { gql } from "graphql-request";
 
-export async function fetchProducts(limit = 4) {
+export async function fetchProducts(limit = 10, languageCode, after = null) {
   const response = await fetch(saleorApiUrl, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      query: `
-        query Products($limit: Int!, $channel: String!) {
-          products(first: $limit, channel: $channel) {
+      query: gql`
+        query Products(
+          $limit: Int!
+          $channel: String!
+          $languageCode: LanguageCodeEnum!
+          $after: String
+        ) {
+          products(first: $limit, channel: $channel, after: $after) {
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
             edges {
               node {
                 id
                 name
                 slug
-                
+                translation(languageCode: $languageCode) {
+                  name
+                }
                 thumbnail {
                   url
                 }
                 pricing {
+                  onSale
+                  discount {
+                    gross {
+                      amount
+                      currency
+                    }
+                  }
                   priceRange {
                     start {
                       gross {
                         amount
+                        currency
+                      }
+                    }
+                  }
+                  priceRangeUndiscounted {
+                    start {
+                      gross {
+                        amount
+                        currency
                       }
                     }
                   }
@@ -37,36 +65,140 @@ export async function fetchProducts(limit = 4) {
       `,
       variables: {
         limit,
-        channel: defaultChannel
-      }
-    })
+        channel: defaultChannel,
+        languageCode: languageCode?.toUpperCase(),
+        after,
+      },
+    }),
   });
 
   const json = await response.json();
   const nodes = json?.data?.products?.edges?.map((e) => e.node) || [];
+  const pageInfo = json?.data?.products?.pageInfo || {};
 
-  // Optionally map to simplified format
-  return nodes.map((item) => ({
-    id: item.id,
-    name: item.name,
-    slug: item.slug,
-    image: item.thumbnail?.url.replace(/^https:\/\/https:\/\//, "https://"),
+  const product = nodes
+    .filter((item) => item.pricing !== null)
+    .map((item) => ({
+      id: item.id,
+      name: item?.translation?.name || item.name,
+      slug: item.slug,
+      image: fixImageUrl(item.thumbnail?.url),
+      price: item.pricing?.priceRange?.start?.gross?.amount,
+      originalPrice: item.pricing?.priceRangeUndiscounted?.start?.gross?.amount,
+      discount: item.pricing?.discount?.gross?.amount || null,
+      onSale: item.pricing?.onSale || false,
+      rating: 4.5,
+    }));
 
-    price: item.pricing?.priceRange?.start?.gross?.amount,
-    discount: null, // Saleor doesn't handle discounts natively here, set manually or via metadata
-    rating: 4.5 // You can mock ratings or store them in metadata
-  }));
+  return {
+    product,
+    pageInfo,
+  };
 }
 
-// =============================
-// fetchProductById.js (with SvelteKit UI support)
-// =============================
+export async function fetchProductsFromCollection(slug, limit = 10, languageCode, after = null) {
+  const response = await fetch(saleorApiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query: gql`
+        query ProductsFromCollection(
+          $slug: String!
+          $limit: Int!
+          $channel: String!
+          $languageCode: LanguageCodeEnum!
+          $after: String
+        ) {
+          collection(slug: $slug, channel: $channel) {
+            name
+            products(first: $limit, after: $after) {
+              pageInfo {
+                endCursor
+                hasNextPage
+              }
+              edges {
+                node {
+                  id
+                  name
+                  slug
+                  translation(languageCode: $languageCode) {
+                    name
+                  }
+                  thumbnail {
+                    url
+                  }
+                  pricing {
+                    onSale
+                    discount {
+                      gross {
+                        amount
+                        currency
+                      }
+                    }
+                    priceRange {
+                      start {
+                        gross {
+                          amount
+                          currency
+                        }
+                      }
+                    }
+                    priceRangeUndiscounted {
+                      start {
+                        gross {
+                          amount
+                          currency
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      `,
+      variables: {
+        slug,
+        limit,
+        channel: defaultChannel,
+        languageCode: languageCode?.toUpperCase(),
+        after,
+      },
+    }),
+  });
+
+  const json = await response.json();
+  const nodes = json?.data?.collection?.products?.edges?.map((e) => e.node) || [];
+  const pageInfo = json?.data?.collection?.products?.pageInfo || {};
+
+  const product = nodes
+    .filter((item) => item.pricing !== null)
+    .map((item) => ({
+      id: item.id,
+      name: item?.translation?.name || item.name,
+      slug: item.slug,
+      image: item.thumbnail?.url?.replace(/^https:\/\/https:\/\//, "https://"),
+      price: item.pricing?.priceRange?.start?.gross?.amount,
+      originalPrice: item.pricing?.priceRangeUndiscounted?.start?.gross?.amount,
+      discount: item.pricing?.discount?.gross?.amount || null,
+      onSale: item.pricing?.onSale || false,
+      rating: 4.5,
+    }));
+
+  return {
+    product,
+    pageInfo,
+  };
+}
 
 export async function fetchProductById(id, channel = defaultChannel) {
   const res = await fetch(saleorApiUrl, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       query: `
@@ -87,10 +219,26 @@ export async function fetchProductById(id, channel = defaultChannel) {
               url
             }
             pricing {
+              onSale
+              discount {
+                gross {
+                  amount
+                  currency
+                }
+              }
               priceRange {
                 start {
                   gross {
                     amount
+                    currency
+                  }
+                }
+              }
+              priceRangeUndiscounted {
+                start {
+                  gross {
+                    amount
+                    currency
                   }
                 }
               }
@@ -108,12 +256,25 @@ export async function fetchProductById(id, channel = defaultChannel) {
             variants {
               id
               name
+              media{
+        url
+      }
               pricing {
                 price {
                   gross {
                     amount
                   }
                 }
+                discount{
+                gross{
+                amount
+                }
+                }
+                   priceUndiscounted{
+          gross{
+            amount
+          }
+        }
               }
               attributes {
                 attribute {
@@ -128,54 +289,71 @@ export async function fetchProductById(id, channel = defaultChannel) {
           }
         }
       `,
-      variables: { id, channel }
-    })
+      variables: { id, channel },
+    }),
   });
 
   const json = await res.json();
   const p = json?.data?.product;
+
   if (!p) return null;
 
-  const editorJson =
-    typeof p.description === "string"
-      ? JSON.parse(p.description)
-      : p.description;
+  const editorJson = typeof p.description === "string" ? JSON.parse(p.description) : p.description;
 
-  const variantAttrs = p.variants.flatMap((v) => v.attributes);
-  const productAttrs = p.attributes;
-  const allAttributes = [...variantAttrs, ...productAttrs];
-
-  const matchAttribute = (a, keys) => {
-    const name = a.attribute.name.toLowerCase().replace(/\s+/g, "-");
-    const slug = a.attribute.slug?.toLowerCase();
-    return keys.includes(name) || keys.includes(slug);
-  };
-
-  const getUniqueAttributeValues = (keys) => {
-    return [
-      ...new Set(
-        allAttributes
-          .filter((a) => matchAttribute(a, keys))
-          .flatMap((a) => a.values.map((v) => v.name))
-      )
-    ];
-  };
-
-  const colors = getUniqueAttributeValues(["color"]);
-  const sizes = getUniqueAttributeValues(["size", "shoe-size"]);
-  const materials = getUniqueAttributeValues(["material"]);
-
+  // Build variant map with all values per attribute
   const variantMap = p.variants.map((v) => {
-    const attrMap = Object.fromEntries(
-      v.attributes.map((a) => [a.attribute.slug, a.values[0]?.name])
-    );
+    const attrMap = {};
+    v.attributes.forEach((a) => {
+      const key = a.attribute.slug.toLowerCase();
+      const values = a.values?.map((val) => val.name).filter(Boolean) ?? [];
+      if (key && values.length > 0) {
+        attrMap[key] = values;
+      }
+    });
 
     return {
       id: v.id,
       price: v.pricing?.price?.gross?.amount ?? null,
-      attributes: attrMap
+      originalPrice: v.pricing?.priceUndiscounted?.gross?.amount ?? null,
+      discount: v.pricing?.discount?.gross?.amount ?? null,
+      media: v?.media?.map((m) => m.url) ?? null,
+      attributes: attrMap,
     };
   });
+
+  // Unique sizes (support both "size" and "shoe-size")
+  const sizes = [
+    ...new Set(
+      variantMap
+        .flatMap((v) => v.attributes.size ?? v.attributes["shoe-size"] ?? [])
+        .filter(Boolean)
+    ),
+  ];
+
+  // Colors available per size
+  const colorsBySize = {};
+  sizes.forEach((size) => {
+    const matchingVariants = variantMap.filter(
+      (v) =>
+        (v.attributes.size && v.attributes.size.includes(size)) ||
+        (v.attributes["shoe-size"] && v.attributes["shoe-size"].includes(size))
+    );
+
+    const allColors = matchingVariants.flatMap((v) => v.attributes.color || []);
+    colorsBySize[size] = [...new Set(allColors)];
+  });
+
+  // console.log("check s", colorsBySize);
+
+  // All unique colors
+  const allColors = [
+    ...new Set(variantMap.flatMap((v) => v.attributes.color || []).filter(Boolean)),
+  ];
+
+  // Optional: all materials
+  const materials = [
+    ...new Set(variantMap.flatMap((v) => v.attributes.material || []).filter(Boolean)),
+  ];
 
   return {
     id: p.id,
@@ -185,38 +363,68 @@ export async function fetchProductById(id, channel = defaultChannel) {
     images: p.media?.map((m) => m.url) || [],
     image: fixImageUrl(p.thumbnail?.url),
     categoryId: p.category?.id,
-    colors,
     sizes,
+    colorsBySize, // ✅ colors grouped by selected size
+    allColors, // ✅ all colors across all variants
     materials,
-    variantMap,
-    basePrice: p.pricing?.priceRange?.start?.gross?.amount,
-    discount: null,
-    rating: 4.5
+    variantMap, // ✅ detailed variant attribute map
+    price: p.pricing?.priceRange?.start?.gross?.amount ?? null,
+    originalPrice: p.pricing?.priceRangeUndiscounted?.start?.gross?.amount ?? null,
+    discount: p.pricing?.discount?.gross?.amount ?? null,
+    onSale: p.pricing?.onSale ?? false,
+    rating: 4.5,
   };
 }
 
-
-export async function fetchProductsByCategorySlug(slug, limit = 4) {
+export async function fetchProductsByCategorySlug(slug, limit = 10, languageCode, after = null) {
   const res = await fetch(saleorApiUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      query: `
-        query ProductsByCategory($slug: String!, $channel: String!, $limit: Int!) {
+      query: gql`
+        query ProductsByCategory(
+          $slug: String!
+          $channel: String!
+          $limit: Int!
+          $languageCode: LanguageCodeEnum!
+          $after: String
+        ) {
           category(slug: $slug) {
             id
             name
-            products(first: $limit, channel: $channel) {
+            products(first: $limit, channel: $channel, after: $after) {
+              pageInfo {
+                endCursor
+                hasNextPage
+              }
               edges {
                 node {
                   id
                   name
                   slug
+                  translation(languageCode: $languageCode) {
+                    name
+                  }
                   thumbnail {
                     url
                   }
                   pricing {
+                    onSale
+                    discount {
+                      gross {
+                        amount
+                        currency
+                      }
+                    }
                     priceRange {
+                      start {
+                        gross {
+                          amount
+                          currency
+                        }
+                      }
+                    }
+                    priceRangeUndiscounted {
                       start {
                         gross {
                           amount
@@ -231,43 +439,60 @@ export async function fetchProductsByCategorySlug(slug, limit = 4) {
           }
         }
       `,
-      variables: { slug, channel: defaultChannel, limit }
-    })
+      variables: {
+        slug,
+        channel: defaultChannel,
+        limit,
+        languageCode: languageCode?.toUpperCase(),
+        after,
+      },
+    }),
   });
 
   const json = await res.json();
   const category = json?.data?.category;
+  const nodes = json?.data?.category?.products?.edges?.map((e) => e.node) || [];
+  const pageInfo = json?.data?.category?.products?.pageInfo || {};
 
   if (!category) return { name: slug, products: [] };
 
-  const products = category.products.edges.map((e) => ({
-    id: e.node.id,
-    name: e.node.name,
-    slug: e.node.slug,
-    image: fixImageUrl(e.node.thumbnail?.url),
-    price: e.node.pricing?.priceRange?.start?.gross?.amount,
-    discount: null,
-    rating: 4.5
-  }));
+  const product = nodes
+    .filter((item) => item.pricing !== null)
+    .map((item) => ({
+      id: item.id,
+      name: item?.translation?.name || item.name,
+      slug: item.slug,
+      image: fixImageUrl(item.thumbnail?.url),
+      price: item.pricing?.priceRange?.start?.gross?.amount,
+      originalPrice: item.pricing?.priceRangeUndiscounted?.start?.gross?.amount,
+      discount: item.pricing?.discount?.gross?.amount || null,
+      onSale: item.pricing?.onSale || false,
+      rating: 4.5,
+    }));
 
   return {
-    name: category.name,
-    products
+    product,
+    pageInfo,
   };
 }
 
-export async function fetchRelatedProducts(categoryId, limit = 20, excludeId, channel = defaultChannel) {
+export async function fetchRelatedProducts(
+  categoryId,
+  limit = 20,
+  excludeId,
+  channel = defaultChannel
+) {
   const res = await fetch(saleorApiUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      query: `
-        query RelatedProducts($categoryId: ID!,$limit: Int!, $channel: String!) {
-          products(
-            filter: { categories: [$categoryId] }
-            first: $limit
-            channel: $channel
-          ) {
+      query: gql`
+        query RelatedProducts($categoryId: ID!, $limit: Int!, $channel: String!) {
+          products(filter: { categories: [$categoryId] }, first: $limit, channel: $channel) {
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
             edges {
               node {
                 id
@@ -277,10 +502,25 @@ export async function fetchRelatedProducts(categoryId, limit = 20, excludeId, ch
                   url
                 }
                 pricing {
+                  onSale
+                  discount {
+                    gross {
+                      amount
+                      currency
+                    }
+                  }
                   priceRange {
                     start {
                       gross {
                         amount
+                      }
+                    }
+                  }
+                  priceRangeUndiscounted {
+                    start {
+                      gross {
+                        amount
+                        currency
                       }
                     }
                   }
@@ -293,26 +533,33 @@ export async function fetchRelatedProducts(categoryId, limit = 20, excludeId, ch
       variables: {
         categoryId,
         limit,
-        channel
-      }
-    })
+        channel,
+      },
+    }),
   });
 
   const json = await res.json();
   const products = json?.data?.products?.edges.map((e) => e.node) || [];
-
-  // Filter out the current product
+  const pageInfo = json?.data?.products?.pageInfo || {};
   const filtered = products.filter((p) => p.id !== excludeId);
 
-  return filtered.map((item) => ({
+  const product = filtered.map((item) => ({
     id: item.id,
     name: item.name,
     slug: item.slug,
     image: item.thumbnail?.url.replace(/^https:\/\/https:\/\//, "https://"),
     price: item.pricing?.priceRange?.start?.gross?.amount,
+    originalPrice: item.pricing?.priceRangeUndiscounted?.start?.gross?.amount,
+    discount: item.pricing?.discount?.gross?.amount || null,
+    onSale: item.pricing?.onSale || false,
     discount: null,
-    rating: 4.5
+    rating: 4.5,
   }));
+
+  return {
+    product,
+    pageInfo,
+  };
 }
 
 export async function searchProducts(queryText, limit = 50) {
@@ -345,16 +592,16 @@ export async function searchProducts(queryText, limit = 50) {
   const res = await fetch(saleorApiUrl, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       query,
       variables: {
         query: queryText,
         channel: defaultChannel,
-        limit
-      }
-    })
+        limit,
+      },
+    }),
   });
 
   const json = await res.json();
@@ -367,6 +614,30 @@ export async function searchProducts(queryText, limit = 50) {
     slug: item.slug,
     image: fixImageUrl(item.thumbnail?.url),
     price: item.pricing?.priceRange?.start?.gross?.amount,
-    rating: 4.5
+    rating: 4.5,
   }));
+}
+
+// src/lib/saleor/products.js
+export async function checkSearchProduct(query, offset = 0, limit = 20, page = 1) {
+  const res = await fetch("https://micro-service.resom.com.br/api/v1/search/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      uid: "resom_products",
+      query,
+      offset,
+      limit,
+      page,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Search failed: ${res.statusText}`);
+  }
+
+  const data = await res.json();
+  return data;
 }

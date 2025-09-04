@@ -8,10 +8,7 @@ export async function handle({ event, resolve }) {
 
     let user = null;
 
-    console.log('Landing page cookies:', {
-        auth: event.cookies.get('authToken'),
-        refresh: event.cookies.get('refreshToken')
-    });
+
 
 
     if (token && !isTokenExpired(token)) {

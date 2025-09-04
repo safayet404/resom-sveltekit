@@ -1,16 +1,14 @@
-
 import { PUBLIC_API_URL, PUBLIC_CHANNEL, PUBLIC_REDIRECT_URL } from "$env/static/public";
 
 export const saleorApiUrl = PUBLIC_API_URL;
 export const defaultChannel = PUBLIC_CHANNEL;
 
-
 export async function refreshToken(refreshToken) {
-  console.log("Attempting refresh with token:", refreshToken);
+  // console.log("Attempting refresh with token:", refreshToken);
 
   const res = await fetch(saleorApiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       query: `
         mutation RefreshToken($refreshToken: String!) {
@@ -22,11 +20,13 @@ export async function refreshToken(refreshToken) {
           }
         }
       `,
-      variables: { refreshToken }
-    })
+      variables: { refreshToken },
+    }),
   });
 
   const json = await res.json();
+  console.log("text", json);
+
   //console.log("Raw refresh response:", json);
 
   const data = json?.data?.tokenRefresh;
@@ -38,11 +38,8 @@ export async function refreshToken(refreshToken) {
 
   return {
     token: data.token,
-
   };
 }
-
-
 
 export async function register(email, password) {
   const response = await fetch(saleorApiUrl, {
@@ -87,7 +84,6 @@ export async function register(email, password) {
   };
 }
 
-
 export async function resetPassword({ email, password, confirmPassword, token }) {
   if (password !== confirmPassword) {
     return { error: "Passwords do not match." };
@@ -125,7 +121,63 @@ export async function resetPassword({ email, password, confirmPassword, token })
     message: "✅ Password reset successfully!",
     tokens: {
       token: json.data.setPassword.token,
-      refreshToken: json.data.setPassword.refreshToken
-    }
+      refreshToken: json.data.setPassword.refreshToken,
+    },
+  };
+}
+
+export async function getProfile(token) {
+  if (!token) return { error: "Missing access token" };
+
+  const res = await fetch(saleorApiUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      query: `
+        query {
+          me {
+            firstName
+            lastName
+            email
+            metadata {
+              key
+              value
+            }
+          
+          }
+        }
+      `,
+    }),
+  });
+
+  const json = await res.json();
+  const data = json?.data?.me;
+
+  if (!data) {
+    return {
+      error: json?.errors?.[0]?.message || "Failed to fetch profile",
+    };
+  }
+
+  const metadata = Object.fromEntries((data.metadata || []).map(({ key, value }) => [key, value]));
+
+  return {
+    user: {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      metadata,
+      address: {
+        street1: data.defaultBillingAddress?.streetAddress1,
+        street2: data.defaultBillingAddress?.streetAddress2,
+        city: data.defaultBillingAddress?.city,
+        postalCode: data.defaultBillingAddress?.postalCode,
+        country: data.defaultBillingAddress?.country?.country,
+        countryCode: data.defaultBillingAddress?.country?.code,
+      },
+    },
   };
 }

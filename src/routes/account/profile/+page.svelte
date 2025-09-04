@@ -1,18 +1,35 @@
 <script>
-    import { user } from "../../../stores/auth";
+    import { getProfile } from "$lib/saleor/auth.js";
 
-    console.log("user data", $user);
+    export let data;
+    const profile = data.profile.user;
+
+    console.log("profile data", profile);
+
+    const metadata = profile.metadata;
 </script>
 
-<div class="bg-white p-4 mx-auto container rounded-lg">
+<div class="bg-white p-4 mx-auto space-y-3 container rounded-lg">
     <h2 class="text-2xl font-bold mb-4">Personal Information</h2>
-    <p>Name: João Carlos da Silva</p>
-    <p>Age: 29</p>
-    <p>Gender: Male</p>
-    <p>CPF: 123.456.789-00</p>
+
+    {#if profile && (profile.firstName || profile.lastName)}
+        <p>Name: {profile.firstName} {profile.lastName}</p>
+    {/if}
+    {#if metadata && metadata?.cpf}
+        <p>CPF: {metadata?.cpf}</p>
+    {/if}
+    {#if metadata && metadata?.phone}
+        <p>Phone : {metadata?.phone}</p>
+    {/if}
 
     <hr class="my-6" />
 
     <h3 class="text-lg font-semibold mb-2">Address</h3>
-    <p>Rua João da Silva, 123, Bloco 12A, Centro, São Paulo - SP</p>
+
+    {#if metadata.apartment}
+        <p>
+            {metadata.apartment} , {metadata.block}, {metadata.street}, {metadata.state}
+            - {metadata.country}
+        </p>
+    {/if}
 </div>

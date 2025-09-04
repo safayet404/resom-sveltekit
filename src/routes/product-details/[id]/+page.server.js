@@ -1,3 +1,4 @@
+import { error } from "@sveltejs/kit";
 import { fetchProductById, fetchRelatedProducts } from "$lib/saleor/products";
 
 export async function load({ params }) {
@@ -7,10 +8,7 @@ export async function load({ params }) {
         const product = await fetchProductById(id);
 
         if (!product || !product.categoryId) {
-            return {
-                status: 404,
-                error: "Product not found or missing category"
-            };
+            throw error(404, "Product not found or missing category");
         }
 
         const relatedProducts = await fetchRelatedProducts(
@@ -24,10 +22,8 @@ export async function load({ params }) {
             relatedProducts
         };
     } catch (e) {
-        return {
-            product: null,
-            relatedProducts: [],
-            error: e.message || "Error loading product"
-        };
+        // log it if needed
+        console.error("Error loading product page:", e);
+        throw error(500, e?.message || "Error loading product");
     }
 }

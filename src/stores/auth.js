@@ -1,26 +1,16 @@
 import { writable } from "svelte/store";
+import { browser } from "$app/environment";
 
-// function persistentWritable(key, initialValue) {
-//     const store = writable(initialValue);
+const storedUser = browser ? localStorage.getItem("user") : null;
 
-//     if (typeof localStorage !== "undefined") {
-//         const json = localStorage.getItem(key);
-//         if (json) store.set(JSON.parse(json));
+export const user = writable(storedUser ? JSON.parse(storedUser) : null);
 
-//         store.subscribe((value) => {
-//             localStorage.setItem(key, JSON.stringify(value));
-//         });
-//     }
-
-//     return store;
-// }
-
-export const user = writable(null);
-
-
-export async function logout() {
-    user.set(null);
-    await fetch('/api/logout', { method: 'POST' });
-
-    window.location.href = '/login';
+if (browser) {
+  user.subscribe((value) => {
+    if (value) {
+      localStorage.setItem("user", JSON.stringify(value));
+    } else {
+      localStorage.removeItem("user");
+    }
+  });
 }

@@ -1,23 +1,29 @@
 <script>
-    import { Splide, SplideSlide } from "@splidejs/svelte-splide";
+  import { Splide, SplideSlide } from "@splidejs/svelte-splide";
 
-    const options = {
-        type: "loop",
-        autoplay: true,
-        interval: 2000,
-        pagination: false,
-        arrows: false,
-        perPage: 1,
-    };
+  const options = {
+    type: "loop",
+    autoplay: true,
+    interval: 5000,
+    pagination: false,
+    arrows: true,
+    perPage: 1,
+    speed: 1000,
+  };
 </script>
 
-<div class="mx-auto text-center md:text-base text-xs sm:text-sm">
+<div class="my-black-bg h-10 flex flex-col items-center justify-center">
+  <div class="mx-auto text-center text-xs sm:text-sm sm:w-[550px]">
     <Splide {options}>
-        <SplideSlide>
-            <h1>Enjoy Up to 30% Off at Urban Sailor</h1>
-        </SplideSlide>
-        <SplideSlide>
-            <h1>Off Disocunt</h1>
-        </SplideSlide>
+      <SplideSlide>
+        <h1 class="text-white text-sm">Enjoy Up to 30% Off at Men's Products</h1>
+      </SplideSlide>
+      <SplideSlide>
+        <h1 class="text-white text-sm">Enjoy Up to 40% Off at Kid's Products</h1>
+      </SplideSlide>
     </Splide>
+  </div>
 </div>
+
+<style>
+</style>

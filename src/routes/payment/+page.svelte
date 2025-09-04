@@ -1,5 +1,6 @@
 <script>
     import { goto } from "$app/navigation";
+    import { createCheckout } from "$lib/saleor/order.js";
 
     export let data;
     const { subtotal, shipping, total } = data;
@@ -13,6 +14,30 @@
     // Derived form validation
     $: formValid =
         cardNumber.trim() && cardName.trim() && expiryDate.trim() && cvv.trim();
+
+    let cart = [
+        {
+            variantId: "UHJvZHVjdFZhcmlhbnQ6MTIz",
+            quantity: 1,
+        },
+    ];
+
+    let userEmail = "hossainsafayet187";
+    let checkoutToken = null;
+    let error = null;
+
+    async function handleCheckout() {
+        const response = await createCheckout(userEmail, cart, "channel-pln");
+
+        if (response.errors.length) {
+            error = response.errors.map((e) => e.message).join(", ");
+        } else {
+            checkoutToken = response.checkout.token;
+            localStorage.setItem("checkoutToken", checkoutToken);
+            // Optionally, navigate to a checkout page
+            // goto('/checkout');
+        }
+    }
 </script>
 
 <section class="mx-auto container p-4">

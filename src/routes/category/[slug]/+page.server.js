@@ -3,12 +3,11 @@
 import { fetchProductsByCategorySlug } from "$lib/saleor/products";
 
 export async function load({ params }) {
-    const { slug } = params;
-    const data = await fetchProductsByCategorySlug(slug);
+  const { slug } = params;
+  const data = await fetchProductsByCategorySlug(slug, 10, "EN");
 
-    return {
-        categoryName: data.name,
-        products: data.products,
-        slug: slug
-    };
+  return {
+    products: data,
+    slug: slug,
+  };
 }

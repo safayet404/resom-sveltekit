@@ -1,4 +1,49 @@
+@import url("https://fonts.googleapis.com/css2?family=Afacad+Flux:wght@100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:wght@300;400;500;600;700;900&display=swap");
+
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
-@import '@fontsource/fira-mono';
+@import "@fontsource/fira-mono";
+
+body {
+  font-family: "Poppins", sans-serif;
+
+  margin: 0 auto;
+}
+
+.playfair-font {
+  font-family: "Playfair Display", serif;
+}
+
+.afacad-flux-font {
+  font-family: "Afacad Flux", sans-serif;
+}
+
+.section-padding-left {
+  padding-left: 80px;
+}
+
+.section-padding-right {
+  padding-right: 80px;
+}
+
+.text-secondary-color {
+  color: #6b7280;
+}
+
+.default-black-bg {
+  background-color: #1f1f1f;
+}
+
+.splide__arrow {
+  background: transparent;
+  color: white;
+}
+
+.splide__arrow svg {
+  fill: white;
+}
+
+.my-black-bg {
+  background-color: #1f1f1f;
+}

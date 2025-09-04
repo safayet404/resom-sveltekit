@@ -1,158 +1,439 @@
 <script>
-    import { fly, slide } from "svelte/transition";
-    import LoginModal from "../auth/LoginModal.svelte";
-    import { cart } from "../../stores/cart";
-    import { favorite } from "../../stores/favorite";
-    import Icon from "@iconify/svelte";
+  import { fly, scale, slide } from "svelte/transition";
+  import LoginModal from "../auth/LoginModal.svelte";
+  import { cart } from "../../stores/cart";
+  import { favorite } from "../../stores/favorite";
+  import Icon from "@iconify/svelte";
 
-    import { clickOutside } from "$lib/actions/clickOutside.js";
-    import { browser } from "$app/environment";
-    import { onMount, tick } from "svelte";
-    import { user, logout } from "../../stores/auth";
-    import { goto } from "$app/navigation";
-    import toast from "svelte-french-toast";
-    import { hydrated } from "../../stores/hydration";
+  import { clickOutside } from "$lib/actions/clickOutside.js";
+  import { browser } from "$app/environment";
+  import { onMount, tick } from "svelte";
+  import { user } from "../../stores/auth";
+  import { goto } from "$app/navigation";
+  import toast from "svelte-french-toast";
+  import { hydrated } from "../../stores/hydration";
+  import { _, locale } from "svelte-i18n";
+  import { setLocaleCookie } from "$lib/i18n/setLocale";
+  import { logout } from "$lib/auth/authLogout";
 
-    let isLoginOpen = false;
-    let isDropdownOpen = false;
+  let isLoginOpen = false;
+  let isDropdownOpen = false;
 
-    function closeDropdown() {
-        isDropdownOpen = false;
+  let isLanguage = false;
+
+  function toggleLanguageMenu() {
+    isLanguage = !isLanguage;
+  }
+
+  async function changeLang(lang) {
+    locale.set(lang);
+
+    setLocaleCookie(lang);
+  }
+  function closeDropdown() {
+    isDropdownOpen = false;
+  }
+
+  $: cartLength = $cart.length;
+
+  $: favoriteLength = $favorite.length;
+
+  function handleProfileClick() {
+    if ($user) {
+      isDropdownOpen = !isDropdownOpen;
+    } else {
+      isLoginOpen = true;
     }
+  }
 
-    let searchQuery = "";
-
-    async function handleSearch(e) {
-        e.preventDefault();
-
-        if (searchQuery.trim()) {
-            await goto(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-        }
-    }
-
-    $: cartLength = $cart.length;
-
-    $: favoriteLength = $favorite.length;
-
-    function handleProfileClick() {
-        if ($user) {
-            isDropdownOpen = !isDropdownOpen;
-        } else {
-            isLoginOpen = true;
-        }
-    }
-
-    async function handleLogout() {
-        await logout();
-        isDropdownOpen = false;
-        await tick();
-        goto("/");
-        toast.success("Logout Successfully !");
-    }
+  async function handleLogout() {
+    await logout();
+    isDropdownOpen = false;
+    await tick();
+    goto("/");
+    toast.success("Logout Successfully !");
+  }
 </script>
 
 <div class="hidden justify-end lg:flex gap-2">
-    <div class="grid grid-cols-2 gap-3 justify-between">
-        <form
-            on:submit={handleSearch}
-            class="flex items-center border rounded-2xl px-2 h-10 mt-1"
-        >
-            <span class="material-icons text-base text-gray-500">search</span>
-            <input
-                bind:value={searchQuery}
-                placeholder="Search Items"
-                class="ml-2 text-sm outline-none bg-transparent flex-grow"
-            />
-        </form>
+  <div class="flex items-center justify-end gap-x-6">
+    <div>
+      <ul class="flex mt-2 items-center gap-x-3 justify-end">
+        <li class="relative main-li">
+          <span
+            on:keydown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                toggleLanguageMenu();
+              }
+            }}
+            role="button"
+            tabindex="0"
+            aria-label="language"
+            on:click={toggleLanguageMenu}
+            class="cursor-pointer text-lg sm:text-2xl md:text-3xl"
+          >
+            {#if $locale == "en"}
+              <p class="text-xl">🇺🇸</p>
+            {:else if $locale == "es"}
+              <p class="text-xl">🇪🇸</p>
+            {:else if $locale == "pt"}
+              <p class="text-xl">🇧🇷</p>
+            {:else}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="26"
+                height="26"
+                viewBox="0 0 26 26"
+                fill="none"
+              >
+                <path
+                  d="M12.9997 23.2916C11.5886 23.2916 10.257 23.0212 9.00488 22.4802C7.75273 21.9393 6.66073 21.2028 5.72888 20.2708C4.79685 19.3389 4.06037 18.2469 3.51942 16.9948C2.97848 15.7426 2.70801 14.411 2.70801 13C2.70801 11.5777 2.97848 10.2433 3.51942 8.99679C4.06037 7.75024 4.79685 6.66103 5.72888 5.72919C6.66073 4.79716 7.75273 4.06067 9.00488 3.51973C10.257 2.97879 11.5886 2.70831 12.9997 2.70831C14.4219 2.70831 15.7563 2.97879 17.0029 3.51973C18.2494 4.06067 19.3386 4.79716 20.2705 5.72919C21.2025 6.66103 21.939 7.75024 22.4799 8.99679C23.0209 10.2433 23.2913 11.5777 23.2913 13C23.2913 14.411 23.0209 15.7426 22.4799 16.9948C21.939 18.2469 21.2025 19.3389 20.2705 20.2708C19.3386 21.2028 18.2494 21.9393 17.0029 22.4802C15.7563 23.0212 14.4219 23.2916 12.9997 23.2916ZM12.9997 21.6436C13.5525 20.9104 14.0178 20.1708 14.3955 19.425C14.7733 18.6791 15.0809 17.8638 15.3185 16.9791H10.6808C10.9323 17.8916 11.2435 18.7208 11.6144 19.4667C11.985 20.2125 12.4468 20.9382 12.9997 21.6436ZM10.9018 21.3457C10.4865 20.7499 10.1136 20.0725 9.78299 19.3136C9.45239 18.5546 9.19546 17.7764 9.0122 16.9791H5.33726C5.90944 18.1041 6.6768 19.0493 7.63934 19.8147C8.60188 20.5799 9.68937 21.0902 10.9018 21.3457ZM15.0976 21.3457C16.31 21.0902 17.3975 20.5799 18.36 19.8147C19.3225 19.0493 20.0899 18.1041 20.6621 16.9791H16.9872C16.769 17.7833 16.4947 18.5649 16.1641 19.3239C15.8337 20.083 15.4782 20.7569 15.0976 21.3457ZM4.65584 15.3541H8.68313C8.61506 14.9514 8.56568 14.5566 8.53499 14.1697C8.50447 13.783 8.48922 13.393 8.48922 13C8.48922 12.6069 8.50447 12.217 8.53499 11.8303C8.56568 11.4433 8.61506 11.0485 8.68313 10.6459H4.65584C4.55166 11.0139 4.47186 11.3965 4.41642 11.7937C4.36081 12.1909 4.33301 12.593 4.33301 13C4.33301 13.407 4.36081 13.809 4.41642 14.2063C4.47186 14.6035 4.55166 14.9861 4.65584 15.3541ZM10.3079 15.3541H15.6915C15.7594 14.9514 15.8087 14.5602 15.8394 14.1803C15.8699 13.8004 15.8851 13.407 15.8851 13C15.8851 12.593 15.8699 12.1996 15.8394 11.8197C15.8087 11.4398 15.7594 11.0485 15.6915 10.6459H10.3079C10.24 11.0485 10.1907 11.4398 10.16 11.8197C10.1295 12.1996 10.1142 12.593 10.1142 13C10.1142 13.407 10.1295 13.8004 10.16 14.1803C10.1907 14.5602 10.24 14.9514 10.3079 15.3541ZM17.3162 15.3541H21.3435C21.4477 14.9861 21.5275 14.6035 21.5829 14.2063C21.6385 13.809 21.6663 13.407 21.6663 13C21.6663 12.593 21.6385 12.1909 21.5829 11.7937C21.5275 11.3965 21.4477 11.0139 21.3435 10.6459H17.3162C17.3843 11.0485 17.4337 11.4433 17.4644 11.8303C17.4949 12.217 17.5101 12.6069 17.5101 13C17.5101 13.393 17.4949 13.783 17.4644 14.1697C17.4337 14.5566 17.3843 14.9514 17.3162 15.3541ZM16.9872 9.0209H20.6621C20.083 7.88195 19.3209 6.93674 18.3757 6.18527C17.4305 5.43398 16.3378 4.92012 15.0976 4.64369C15.5128 5.27419 15.8822 5.96382 16.2058 6.71258C16.5295 7.46117 16.79 8.23061 16.9872 9.0209ZM10.6808 9.0209H15.3185C15.067 8.11523 14.7507 7.28079 14.3695 6.51758C13.9882 5.75438 13.5316 5.03396 12.9997 4.35633C12.4678 5.03396 12.0111 5.75438 11.6298 6.51758C11.2486 7.28079 10.9323 8.11523 10.6808 9.0209ZM5.33726 9.0209H9.0122C9.20936 8.23061 9.46981 7.46117 9.79355 6.71258C10.1171 5.96382 10.4865 5.27419 10.9018 4.64369C9.65452 4.92012 8.56008 5.43579 7.61849 6.19069C6.67671 6.94541 5.9163 7.88881 5.33726 9.0209Z"
+                  fill="black"
+                />
+              </svg>
+            {/if}
 
-        <div>
-            <ul class="flex mt-2 items-center gap-3">
-                <li class="relative">
-                    <a
-                        href="/favorite"
-                        class="cursor-pointer text-lg sm:text-2xl md:text-3xl"
-                    >
-                        <span class="material-icons">favorite</span>
-                    </a>
-                    {#if $favorite.length > 0}
-                        <span
-                            class="absolute -top-4 -right-2 text-white rounded-2xl p-1 bg-red-800"
-                        >
-                            {$favorite.length}
-                        </span>
-                    {/if}
-                </li>
-                <li class="relative">
-                    <a
-                        href="/cart"
-                        class="cursor-pointer text-lg sm:text-2xl md:text-3xl"
-                    >
-                        <span class="material-icons">shopping_cart</span>
-                        <!-- <Icon icon="solar:cart-bold" /> -->
-                    </a>
-                    {#if $cart.length > 0}
-                        <span
-                            class="absolute -top-4 -right-2 text-white rounded-2xl p-1 bg-red-800"
-                        >
-                            {$cart.length}
-                        </span>
-                    {/if}
-                </li>
-                <li class="relative" use:clickOutside={closeDropdown}>
-                    <span
-                        on:keydown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault(); // prevent scrolling on space
-                                handleProfileClick();
-                            }
-                        }}
-                        role="button"
-                        tabindex="0"
-                        aria-label="profile"
-                        class="cursor-pointer text-lg sm:text-2xl md:text-3xl mt-1"
-                        on:click={handleProfileClick}
-                    >
-                        {#if $user}
-                            <span class="material-icons">how_to_reg</span>
-                        {:else}
-                            <span class="material-icons">person</span>
-                        {/if}
-                    </span>
+            {#if isLanguage}
+              <div
+                use:clickOutside={() => (isLanguage = false)}
+                class="absolute top-full right-0 mt-2 w-48 bg-white shadow-lg rounded-md z-50 p-5 space-y-5"
+                transition:scale
+              >
+                <button
+                  class="gap-2 hover:bg-[#F3F2F1] py-1 px-4 hover:scale-110 hover:rounded-lg transform transition-all duration-300 flex text-base"
+                  on:click={() => changeLang("en")}>🇺🇸 English</button
+                >
 
-                    {#if isDropdownOpen && $user}
-                        <ul
-                            transition:slide
-                            class="absolute top-full right-0 mt-2 w-48 bg-white shadow-lg rounded-md z-50 p-5 space-y-4"
-                        >
-                            <li>
-                                <a href="/account/profile">👤 Profile</a>
-                            </li>
-                            <li>
-                                <a href="/account/orders">📦 My Orders</a>
-                            </li>
-                            <li>
-                                <a href="/account/security">🔐 Security</a>
-                            </li>
-                            <li>
-                                <a href="/account/payment">💳 Payment</a>
-                            </li>
-                            <li>
-                                <a href="/account/affiliate">🎯 Affiliate</a>
-                            </li>
-                            <li>
-                                <a href="/account/help">❓ Need Help</a>
-                            </li>
-                            <li>
-                                <button
-                                    class="text-red-600"
-                                    on:click={handleLogout}>🔓 Logout</button
+                <button
+                  class="flex gap-2 hover:bg-[#F3F2F1] py-1 px-4 hover:scale-110 hover:rounded-lg transform transition-all duration-300 text-base"
+                  on:click={() => changeLang("es")}>🇪🇸 Español</button
+                >
+                <button
+                  class="flex gap-2 hover:bg-[#F3F2F1] py-1 px-4 hover:scale-110 hover:rounded-lg transform transition-all duration-300 text-base"
+                  on:click={() => changeLang("pt")}
+                >
+                  🇧🇷 Português</button
+                >
+              </div>
+            {/if}
+          </span>
+        </li>
+        <li class="relative main-li">
+          <a href="/favorite" class="cursor-pointer text-lg sm:text-2xl md:text-3xl">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <path
+                d="M4.3314 12.0474L12 20L19.6686 12.0474C20.5211 11.1633 21 9.96429 21 8.71405C21 6.11055 18.9648 4 16.4543 4C15.2487 4 14.0925 4.49666 13.24 5.38071L12 6.66667L10.76 5.38071C9.90749 4.49666 8.75128 4 7.54569 4C5.03517 4 3 6.11055 3 8.71405C3 9.96429 3.47892 11.1633 4.3314 12.0474Z"
+                stroke="black"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+
+            <!-- <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M18.5588 19.5488C17.5654 16.8918 15.0036 15 12 15C8.99638 15 6.4346 16.8918 5.44117 19.5488M18.5588 19.5488C20.6672 17.7154 22 15.0134 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 15.0134 3.33285 17.7154 5.44117 19.5488M18.5588 19.5488C16.8031 21.0756 14.5095 22 12 22C9.49052 22 7.19694 21.0756 5.44117 19.5488" stroke="#28303F" stroke-width="1.5" stroke-linejoin="round"/>
+                        <circle cx="3" cy="3" r="3" transform="matrix(1 0 0 -1 9 12)" stroke="#28303F" stroke-width="1.5" stroke-linejoin="round"/>
+                        </svg> -->
+          </a>
+          {#if $favorite.length > 0}
+            <span
+              class="absolute -bottom-1 -right-3 px-2 text-xs text-white rounded-2xl bg-red-800"
+            >
+              {$favorite.length}
+            </span>
+          {/if}
+        </li>
+        <li class="relative main-li">
+          <a href="/cart" class="cursor-pointer text-lg sm:text-2xl md:text-3xl">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="26"
+              height="26"
+              viewBox="0 0 26 26"
+              fill="none"
+            >
+              <path
+                d="M8.89776 12.4706V8.23529C8.89776 5.8962 10.7344 4 13 4C15.2655 4 17.1022 5.8962 17.1022 8.23529V12.4706M7.05129 22H18.9487C20.1582 22 21.1052 20.9248 20.9906 19.6816L20.2092 11.211C20.1089 10.1241 19.2248 9.29412 18.1673 9.29412H7.83266C6.7752 9.29412 5.89105 10.1241 5.79079 11.211L5.00942 19.6816C4.89473 20.9249 5.84167 22 7.05129 22Z"
+                stroke="black"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <!-- <span class="material-symbols-outlined text-2xl">
+                            local_mall
+                        </span> -->
+          </a>
+          {#if $cart.length > 0}
+            <span
+              class="absolute -bottom-1 -right-3 px-2 text-xs text-white rounded-2xl bg-red-800"
+            >
+              {$cart.length}
+            </span>
+          {/if}
+        </li>
+        <li class="relative main-li" use:clickOutside={closeDropdown}>
+          <span
+            on:keydown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault(); // prevent scrolling on space
+                handleProfileClick();
+              }
+            }}
+            role="button"
+            tabindex="0"
+            aria-label="profile"
+            class="cursor-pointer text-lg sm:text-2xl md:text-3xl mt-1"
+            on:click={handleProfileClick}
+          >
+            {#if $user}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="26"
+                height="26"
+                viewBox="0 0 26 26"
+                fill="none"
+              >
+                <path
+                  d="M17.4684 8.39581C17.269 11.0803 15.2334 13.2708 12.9996 13.2708C10.7658 13.2708 8.72694 11.0814 8.53086 8.39581C8.32828 5.60298 10.3075 3.52081 12.9996 3.52081C15.6906 3.52081 17.672 5.6539 17.4684 8.39581Z"
+                  stroke="black"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M3.26855 22.4759C4.09839 17.875 8.5823 15.4375 13.0001 15.4375C17.418 15.4375 21.9019 17.875 22.7328 22.4759"
+                  stroke="black"
+                  stroke-width="1.5"
+                  stroke-miterlimit="10"
+                />
+              </svg>
+            {:else}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="26"
+                height="26"
+                viewBox="0 0 26 26"
+                fill="none"
+              >
+                <path
+                  d="M17.4684 8.39581C17.269 11.0803 15.2334 13.2708 12.9996 13.2708C10.7658 13.2708 8.72694 11.0814 8.53086 8.39581C8.32828 5.60298 10.3075 3.52081 12.9996 3.52081C15.6906 3.52081 17.672 5.6539 17.4684 8.39581Z"
+                  stroke="black"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M3.26855 22.4759C4.09839 17.875 8.5823 15.4375 13.0001 15.4375C17.418 15.4375 21.9019 17.875 22.7328 22.4759"
+                  stroke="black"
+                  stroke-width="1.5"
+                  stroke-miterlimit="10"
+                />
+              </svg>
+            {/if}
+          </span>
+
+          {#if isDropdownOpen && $user}
+            <ul
+              transition:slide
+              class="absolute top-full right-0 mt-2 w-48 bg-white shadow-lg rounded-md z-50 p-5 space-y-6"
+            >
+              <li>
+                <a class="flex gap-2 my-auto" href="/account/profile">
+                  <svg
+                    width="18"
+                    height="18"
+                    class="my-auto"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
+                      stroke="#1A1919"
+                      stroke-width="1.49914"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M20.5862 22C20.5862 18.13 16.7362 15 11.9962 15C7.25625 15 3.40625 18.13 3.40625 22"
+                      stroke="#1A1919"
+                      stroke-width="1.49914"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  {$_("profile")}
+                </a>
+              </li>
+              <li>
+                <a class="flex gap-2 my-auto" href="/account/orders">
+                  <svg
+                    width="18"
+                    height="18"
+                    class="my-auto"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M18.5714 2H6.42857C5.08731 2 4 3.08731 4 4.42857V20.2143C4 21.5555 5.08731 22.6429 6.42857 22.6429H18.5714C19.9127 22.6429 21 21.5555 21 20.2143V4.42857C21 3.08731 19.9127 2 18.5714 2Z"
+                      stroke="#1A1919"
+                    />
+                    <path
+                      d="M8.85547 8.07227H16.1412M8.85547 12.9294H16.1412M8.85547 17.7866H13.7126"
+                      stroke="#1A1919"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  {$_("my_orders")}</a
+                >
+              </li>
+              <li>
+                <a class="flex gap-2 my-auto" href="/account/security">
+                  <svg
+                    width="18"
+                    height="18"
+                    class="my-auto"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M4 7.2075C4 6.45695 4 6.0821 4.0595 5.7693C4.18634 5.09766 4.51267 4.47985 4.9959 3.99646C5.47914 3.51307 6.09685 3.18655 6.76845 3.0595C7.0821 3 7.4578 3 8.2075 3C8.5356 3 8.7005 3 8.8586 3.01445C9.53949 3.0784 10.1853 3.34619 10.7116 3.78285C10.834 3.884 10.9496 3.9996 11.1825 4.2325L11.65 4.7C12.3436 5.3936 12.6904 5.7404 13.1052 5.97075C13.3332 6.09782 13.575 6.19821 13.826 6.26995C14.2833 6.4 14.7738 6.4 15.7538 6.4H16.0717C18.3089 6.4 19.4284 6.4 20.1551 7.0545C20.2225 7.114 20.286 7.17747 20.3455 7.2449C21 7.97165 21 9.0911 21 11.3283V13.2C21 16.4054 21 18.0084 20.0038 19.0038C19.0076 19.9991 17.4054 20 14.2 20H10.8C7.59465 20 5.99155 20 4.9962 19.0038C4.00085 18.0076 4 16.4054 4 13.2V7.2075Z"
+                      stroke="#1A1919"
+                      stroke-width="1.5"
+                    />
+                    <path
+                      d="M12.5008 14.0504C13.4397 14.0504 14.2008 13.2893 14.2008 12.3504C14.2008 11.4115 13.4397 10.6504 12.5008 10.6504C11.5619 10.6504 10.8008 11.4115 10.8008 12.3504C10.8008 13.2893 11.5619 14.0504 12.5008 14.0504Z"
+                      stroke="#1A1919"
+                      stroke-width="1.5"
+                    />
+                    <path
+                      d="M11.8633 16.1758C11.8633 16.3449 11.9304 16.507 12.05 16.6266C12.1696 16.7461 12.3317 16.8133 12.5008 16.8133C12.6699 16.8133 12.832 16.7461 12.9516 16.6266C13.0711 16.507 13.1383 16.3449 13.1383 16.1758H11.8633ZM11.8633 14.0508V16.1758H13.1383V14.0508H11.8633Z"
+                      fill="#1A1919"
+                    />
+                  </svg>
+
+                  {$_("security")}</a
+                >
+              </li>
+              <li>
+                <a class="flex gap-2 my-auto" href="/account/payment">
+                  <svg
+                    width="18"
+                    height="18"
+                    class="my-auto"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M14.2188 13.5625C14.0779 13.5625 13.9427 13.6185 13.8431 13.7181C13.7435 13.8177 13.6875 13.9529 13.6875 14.0938C13.6875 14.2346 13.7435 14.3698 13.8431 14.4694C13.9427 14.569 14.0779 14.625 14.2188 14.625H16.3438C16.4846 14.625 16.6198 14.569 16.7194 14.4694C16.819 14.3698 16.875 14.2346 16.875 14.0938C16.875 13.9529 16.819 13.8177 16.7194 13.7181C16.6198 13.6185 16.4846 13.5625 16.3438 13.5625H14.2188ZM2 6.92188C2 6.14695 2.30784 5.40375 2.8558 4.8558C3.40376 4.30784 4.14695 4 4.92188 4H16.0781C16.8531 4 17.5962 4.30784 18.1442 4.8558C18.6922 5.40375 19 6.14695 19 6.92188V13.8281C19 14.6031 18.6922 15.3462 18.1442 15.8942C17.5962 16.4422 16.8531 16.75 16.0781 16.75H4.92188C4.14695 16.75 3.40376 16.4422 2.8558 15.8942C2.30784 15.3462 2 14.6031 2 13.8281V6.92188ZM4.92188 5.0625C4.42874 5.0625 3.9558 5.2584 3.6071 5.6071C3.2584 5.9558 3.0625 6.42874 3.0625 6.92188V8.25H17.9375V6.92188C17.9375 6.42874 17.7416 5.9558 17.3929 5.6071C17.0442 5.2584 16.5713 5.0625 16.0781 5.0625H4.92188ZM17.9375 9.3125H3.0625V13.8281C3.0625 14.8545 3.8955 15.6875 4.92188 15.6875H16.0781C16.5713 15.6875 17.0442 15.4916 17.3929 15.1429C17.7416 14.7942 17.9375 14.3213 17.9375 13.8281V9.3125Z"
+                      fill="#1A1919"
+                    />
+                  </svg>
+                  {$_("payment")}</a
+                >
+              </li>
+              <!-- <li>
+                                <a
+                                    class="flex gap-2 my-auto"
+                                    href="/account/affiliate"
                                 >
-                            </li>
-                        </ul>
-                    {/if}
-                </li>
+                                    <svg
+                                        width="18"
+                                        height="18"
+                                        class="my-auto"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            d="M20.9695 5.13023C20.9695 5.13023 21.1199 3.61295 20.7527 3.24659M20.7527 3.24659C20.3847 2.87853 18.8699 3.03153 18.8699 3.03153M20.7527 3.24659L18.45 5.55014M20.9695 17.8703C20.9695 17.8703 21.1199 19.3876 20.7527 19.7531M20.7527 19.7531C20.3847 20.122 18.8699 19.969 18.8699 19.969M20.7527 19.7531L18.45 17.4504M4.24622 3.24659L6.54977 5.55014M4.24622 3.24659C4.61512 2.87853 6.12986 3.03153 6.12986 3.03153M4.24622 3.24659C3.88071 3.61295 4.03031 5.13023 4.03031 5.13023M4.24622 19.7539L6.54977 17.4504M4.24622 19.7539C4.61512 20.122 6.12986 19.969 6.12986 19.969M4.24622 19.7539C3.88071 19.3884 4.03031 17.8703 4.03031 17.8703M18.45 11.5003C18.45 12.2817 18.2961 13.0554 17.9971 13.7773C17.6981 14.4992 17.2598 15.1551 16.7073 15.7076C16.1548 16.2602 15.4988 16.6985 14.7769 16.9975C14.055 17.2965 13.2813 17.4504 12.4999 17.4504C11.7185 17.4504 10.9448 17.2965 10.2229 16.9975C9.50098 16.6985 8.84504 16.2602 8.29252 15.7076C7.74 15.1551 7.30172 14.4992 7.00269 13.7773C6.70367 13.0554 6.54977 12.2817 6.54977 11.5003C6.54977 9.9222 7.17665 8.40876 8.29252 7.29289C9.40839 6.17702 10.9218 5.55014 12.4999 5.55014C14.078 5.55014 15.5914 6.17702 16.7073 7.29289C17.8231 8.40876 18.45 9.9222 18.45 11.5003Z"
+                                            stroke="#1A1919"
+                                            stroke-width="1.5"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        />
+                                        <path
+                                            d="M12.4277 9.20655C11.4884 9.20655 10.8008 9.75226 10.8008 10.3864C10.8008 11.0205 11.2445 11.4149 12.5008 11.4149C13.8846 11.4149 14.2009 12.0465 14.2009 12.6806C14.2009 13.3138 13.5956 13.8136 12.4277 13.8136M12.4277 9.20655C13.1672 9.20655 13.5591 9.4658 13.8685 9.81516M12.4277 9.20655V8.48828M12.4277 13.8136C11.6882 13.8136 11.3992 13.6666 10.992 13.2977M12.4277 13.8136V14.4826"
+                                            stroke="#1A1919"
+                                            stroke-width="1.5"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        />
+                                    </svg>
+                                    Affiliate</a
+                                >
+                            </li> -->
+              <li>
+                <a class="flex gap-2 my-auto" href="/account/help">
+                  <svg
+                    width="18"
+                    height="18"
+                    class="my-auto"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M12.4996 3C17.1939 3 20.9992 6.80526 20.9992 11.4996C20.9992 16.1939 17.1939 19.9991 12.4996 19.9991C11.143 20.001 9.80591 19.6769 8.60083 19.054L5.34889 19.9609C5.16746 20.0115 4.97583 20.013 4.79363 19.9652C4.61144 19.9174 4.44523 19.822 4.31203 19.6888C4.17884 19.5556 4.08345 19.3894 4.03564 19.2072C3.98783 19.025 3.98932 18.8334 4.03996 18.652L4.94771 15.4026C4.32329 14.1964 3.99824 12.8578 4.00001 11.4996C4.00001 6.80526 7.80527 3 12.4996 3ZM12.4996 4.27494C10.5835 4.27494 8.74587 5.0361 7.39099 6.39098C6.03611 7.74587 5.27494 9.58348 5.27494 11.4996C5.27494 12.749 5.59198 13.95 6.18695 15.0158L6.31444 15.2453L5.36929 18.6316L8.75807 17.6864L8.98756 17.8139C9.95173 18.35 11.0259 18.6581 12.1276 18.7147C13.2293 18.7713 14.3294 18.5748 15.3434 18.1404C16.3574 17.7059 17.2585 17.045 17.9775 16.2083C18.6965 15.3717 19.2144 14.3814 19.4914 13.3136C19.7684 12.2458 19.7972 11.1287 19.5755 10.048C19.3539 8.96732 18.8877 7.95175 18.2127 7.07917C17.5377 6.20659 16.6719 5.50017 15.6815 5.01408C14.6912 4.52799 13.6028 4.27515 12.4996 4.27494ZM12.4996 14.4744C12.725 14.4744 12.9412 14.564 13.1006 14.7234C13.26 14.8828 13.3495 15.099 13.3495 15.3244C13.3495 15.5498 13.26 15.766 13.1006 15.9254C12.9412 16.0848 12.725 16.1743 12.4996 16.1743C12.2742 16.1743 12.058 16.0848 11.8986 15.9254C11.7392 15.766 11.6496 15.5498 11.6496 15.3244C11.6496 15.099 11.7392 14.8828 11.8986 14.7234C12.058 14.564 12.2742 14.4744 12.4996 14.4744ZM12.4996 7.0373C13.1195 7.0373 13.714 7.28356 14.1524 7.7219C14.5907 8.16024 14.837 8.75477 14.837 9.37468C14.837 10.2331 14.5845 10.7125 13.9437 11.3797L13.8 11.5251C13.2713 12.0537 13.137 12.2781 13.137 12.7745C13.137 12.9436 13.0699 13.1057 12.9503 13.2253C12.8308 13.3448 12.6686 13.412 12.4996 13.412C12.3305 13.412 12.1684 13.3448 12.0488 13.2253C11.9293 13.1057 11.8621 12.9436 11.8621 12.7745C11.8621 11.9161 12.1145 11.4367 12.7554 10.7695L12.8991 10.6241C13.4277 10.0954 13.562 9.87105 13.562 9.37468C13.5611 9.10293 13.4562 8.84184 13.2687 8.64512C13.0812 8.4484 12.8255 8.331 12.5541 8.31706C12.2827 8.30313 12.0162 8.39372 11.8096 8.57021C11.603 8.74669 11.4718 8.99565 11.4431 9.26588L11.4371 9.37468C11.4371 9.54375 11.37 9.70589 11.2504 9.82544C11.1309 9.94499 10.9687 10.0121 10.7997 10.0121C10.6306 10.0121 10.4685 9.94499 10.3489 9.82544C10.2294 9.70589 10.1622 9.54375 10.1622 9.37468C10.1622 8.75477 10.4085 8.16024 10.8468 7.7219C11.2851 7.28356 11.8797 7.0373 12.4996 7.0373Z"
+                      fill="#1A1919"
+                    />
+                  </svg>
+                  {$_("need_help")}</a
+                >
+              </li>
+              <li>
+                <button class="text-red-600 flex gap-2" on:click={handleLogout}>
+                  <svg
+                    width="18"
+                    height="18"
+                    class="my-auto"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M14.05 12.4992H3M3 12.4992L5.975 9.94922M3 12.4992L5.975 15.0492"
+                      stroke="#808080"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                    <path
+                      d="M8.95312 8.25C8.96332 6.40125 9.04577 5.39995 9.69857 4.74715C10.4457 4 11.6476 4 14.0514 4H14.9014C17.3061 4 18.508 4 19.2551 4.74715C20.0014 5.49345 20.0014 6.6962 20.0014 9.1V15.9C20.0014 18.3038 20.0014 19.5065 19.2551 20.2528C18.6015 20.9065 17.6002 20.9881 15.7514 20.9983M8.95312 16.75C8.96332 18.5987 9.04577 19.6 9.69857 20.2528C10.2434 20.7985 11.0314 20.9456 12.3514 20.9855"
+                      stroke="#808080"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  {$_("logout")}</button
+                >
+              </li>
             </ul>
-        </div>
+          {/if}
+        </li>
+      </ul>
     </div>
+  </div>
 </div>
 <LoginModal isOpen={isLoginOpen} close={() => (isLoginOpen = false)} />
+
+<style>
+  .main-li {
+    border-left: 1px solid #c9c9c9;
+    padding-left: 12px;
+  }
+  .main-li:first-child {
+    border-left: 0px;
+  }
+</style>
