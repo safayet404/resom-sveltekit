@@ -57,7 +57,7 @@
       </div>
 
       <!-- Favorite & Cart Buttons -->
-      <div class="absolute top-3 sm:top-6 right-3 sm:right-6 text-lg z-40 flex flex-col gap-2">
+      <div class="absolute top-4 sm:top-6 right-3 sm:right-6 text-lg z-40 flex flex-col gap-2">
         <!-- Favorite -->
 
         <button
