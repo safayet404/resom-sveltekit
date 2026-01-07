@@ -63,7 +63,7 @@
         hasMore = false;
       }
     } catch (err) {
-      console.error("Failed to load more products.", err);
+      console.error("Failed to load more products.Try again", err);
       hasMore = false;
     }
 
